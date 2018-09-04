@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <string name="app_name">ID Tech VP3300 Demo</string>
+    <string name="location">Location</string>
+    <string name="cant_read_folder">folder can\'t be read!</string>
+    <string name="nnew">New</string>
+    <string name="select">Select</string>
+    <string name="file_name">File name:</string>
+    <string name="cancel">Cancel</string>
+    <string name="create">Save</string>
+    <string name="no_data">No Data</string>
+	<color name="gray">#ff0ff000</color>
+	
+	<string name="action_connect">Connect</string>
+	<string name="action_switch">Switch Reader Type</string>
+    <string name="action_change_reader">Select reader type</string>
+    <string name="action_product_info">Product Info.</string>
+    <string name="action_sdk_info">SDK Info.</string>
+    <string name="action_autoconfig">Start AutoConfig</string>
+    <string name="action_start_rki">Start RKI</string>
+    <string name="action_enable_log">Enable Log</string>
+    <string name="action_export_log">Export Log</string>
+    <string name="action_delete_log">Delete Log</string>
+    <string name="action_firmware_update_init">Initialize Firmware Update</string>
+    <string name="action_firmware_update">Update Firmware</string>
+    <string name="action_exit">Exit</string>
+	
+    <string name="lbl_sdk_info">SDK info</string>
+    <string name="lbl_swipe_card">Swipe/Tap</string>
+    <string name="lbl_command">Command</string>
+    <string name="lbl_cancel">Cancel</string>
+    <string name="logoDesc">ID Tech Logo</string>
+    
+    <string-array name="reader_type">
+        <item>VP3300 Audio Jack (Audio Jack)</item>
+        <item>VP3300 Audio Jack (USB)</item>
+        <item>VP3300 Bluetooth (Bluetooth)</item>
+        <item>VP3300 Bluetooth (USB)</item>
+        <item>VP3300 USB</item>
+    </string-array>
+    
+    <string-array name="fw_reader_type">
+        <item>VP3300 Audio Jack (USB)</item>
+        <item>VP3300 Bluetooth (USB)</item>
+        <item>VP3300 USB</item>
+    </string-array>
+    
+</resources>

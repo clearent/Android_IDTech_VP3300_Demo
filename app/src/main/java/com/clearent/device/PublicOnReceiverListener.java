@@ -1,0 +1,61 @@
+package com.clearent.device;
+
+import com.idtechproducts.device.StructConfigParameters;
+
+public interface PublicOnReceiverListener {
+
+    //give them a payment token back
+    void successfulTransactionToken(String transactionToken);
+
+    //Just like our iOS wrapping strategy we don't expose this method.
+    //void swipeMSRData(IDTMSRData var1);
+
+    void lcdDisplay(int var1, String[] var2, int var3);
+
+    void lcdDisplay(int var1, String[] var2, int var3, byte[] var4, byte var5);
+
+    //Just like our iOS wrapping strategy we don't expose this method.
+    //void emvTransactionData(IDTEMVData var1);
+
+    void deviceConnected();
+
+    void deviceDisconnected();
+
+    void timeout(int var1);
+
+    void autoConfigCompleted(StructConfigParameters var1);
+
+    void autoConfigProgress(int var1);
+
+    void msgRKICompleted(String var1);
+
+    void ICCNotifyInfo(byte[] var1, String var2);
+
+    void msgBatteryLow();
+
+    void LoadXMLConfigFailureInfo(int var1, String var2);
+
+    void msgToConnectDevice();
+
+    void msgAudioVolumeAjustFailed();
+
+    void dataInOutMonitor(byte[] var1, boolean var2);
+
+    public static enum EMV_RESULT_CODE_Types {
+        EMV_RESULT_CODE_OFFLINE_APPROVED,
+        EMV_RESULT_CODE_OFFLINE_DECLINED,
+        EMV_RESULT_CODE_APPROVED,
+        EMV_RESULT_CODE_DECLINED,
+        EMV_RESULT_CODE_GO_ONLINE,
+        EMV_RESULT_CODE_CALL_YOUR_BANK,
+        EMV_RESULT_CODE_NOT_ACCEPTED,
+        EMV_RESULT_CODE_USE_MAGSTRIPE,
+        EMV_RESULT_CODE_TIME_OUT,
+        EMV_RESULT_CODE_TRANSACTION_SUCCESS,
+        EMV_RESULT_CODE_TERMINATE;
+
+        private EMV_RESULT_CODE_Types() {
+        }
+    }
+
+}

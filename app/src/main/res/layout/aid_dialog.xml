@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <Button
+    	android:id="@+id/btnShowAID"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Show AID" />
+    
+    <Button
+    	android:id="@+id/btnRemoveAID"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Remove AID" />
+    
+    <Button
+    	android:id="@+id/btnCreateAID"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Create AID" />
+    
+    <Button
+    	android:id="@+id/btnShowAIDList"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Show AID List" />
+    
+    <Button
+    	android:id="@+id/btnAIDCancel"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Cancel" />
+
+</LinearLayout>

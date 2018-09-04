@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <TextView
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="How should this transaction completion be simulated?" />
+    	
+    <Button
+    	android:id="@+id/btnDeclined"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Host Declined" />
+    
+    <Button
+    	android:id="@+id/btnUnreachable"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Host Unreachable" />
+    
+    <Button
+    	android:id="@+id/btnApproved"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Host Approved" />
+
+</LinearLayout>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <Button
+    	android:id="@+id/btnCreateCRL"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Create CRL" />
+    	
+    <Button
+    	android:id="@+id/btnRemoveCRL"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Remove CRL" />
+    
+    <Button
+    	android:id="@+id/btnShowCRLList"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Show CRL List" />
+    
+    <Button
+    	android:id="@+id/btnCRLCancel"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Cancel" />
+
+</LinearLayout>

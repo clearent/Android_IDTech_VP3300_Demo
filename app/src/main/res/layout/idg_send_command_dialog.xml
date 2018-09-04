@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <TextView
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Please enter Command" />
+        
+    <EditText
+    	android:id="@+id/edtIdgCmd"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:digits="0123456789ABCDEF"
+		android:inputType="textCapCharacters"
+    	android:text="" />
+    	
+    <TextView
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Please enter Sub Command" />
+        
+    <EditText
+    	android:id="@+id/edtIdgSubCmd"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:digits="0123456789ABCDEF"
+		android:inputType="textCapCharacters"
+    	android:text="" />
+    	
+    <TextView
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Please enter Data" />
+        
+    <EditText
+    	android:id="@+id/edtIdgCmdData"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:digits="0123456789ABCDEF"
+		android:inputType="textCapCharacters"
+    	android:text="" />
+    	
+    <Button
+    	android:id="@+id/btnIdgSendCmd"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Send Command" />
+    
+    <Button
+    	android:id="@+id/btnIdgCancelCmd"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Cancel" />
+
+</LinearLayout>

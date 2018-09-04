@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    	
+    <CheckBox android:id="@+id/checkbox_auth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Auto Authentication" />
+        
+    <CheckBox android:id="@+id/checkbox_comp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Auto Completion" />
+ 
+ 	<TextView
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Please enter transaction amount" />
+    	     
+    <EditText
+    	android:id="@+id/edtAmount"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:inputType="numberDecimal"
+    	android:text="1.00" />
+    	
+    <TextView
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Please enter tag 8A value" />
+    	
+    <EditText
+    	android:id="@+id/edt8A"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:digits="0123456789ABCDEF\r\n"
+		android:inputType="textCapCharacters"
+    	android:text="" />
+    	
+    <Button
+    	android:id="@+id/btnStartEMV"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Start EMV" />
+    
+    <Button
+    	android:id="@+id/btnCancel"
+    	android:layout_width="match_parent"
+    	android:layout_height="wrap_content"
+    	android:text="Cancel" />
+
+</LinearLayout>
