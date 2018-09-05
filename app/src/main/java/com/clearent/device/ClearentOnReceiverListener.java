@@ -1,5 +1,6 @@
 package com.clearent.device;
 
+import com.clearent.device.config.ClearentConfigurator;
 import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.IDTMSRData;
 import com.idtechproducts.device.OnReceiverListener;
@@ -10,6 +11,8 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     private PublicOnReceiverListener publicOnReceiverListener;
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
+
+    private ClearentConfigurator clearentConfigurator;
 
     public ClearentOnReceiverListener(PublicOnReceiverListener publicOnReceiverListener, String paymentsBaseUrl, String paymentsPublicKey) {
         this.publicOnReceiverListener = publicOnReceiverListener;
@@ -42,6 +45,12 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     @Override
     public void deviceConnected() {
         publicOnReceiverListener.deviceConnected();
+        //TODO How do we send messages back ? just use the lcdDisplay method ??
+        //[self deviceMessage:@"VIVOpay connected. Waiting for configuration to complete..."];
+        //TODO how do we get the kernel version and the serial number without access to the idt_vp3300 object ? add to composition ?
+
+        //TODO DAVE H. START HERE !!!!!
+       // clearentConfigurator.configure(this);
     }
 
     @Override

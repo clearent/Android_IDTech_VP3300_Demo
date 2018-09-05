@@ -19,7 +19,8 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile files('libs/Universal_SDK_1.00.089.jar')
-    compile files('libs/database-connection-1.00.jar')
+    implementation 'com.android.support:appcompat-v7:22.2.1'
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation files('libs/Universal_SDK_1.00.089.jar')
+    implementation files('libs/database-connection-1.00.jar')
 }
