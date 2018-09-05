@@ -1,24 +1,16 @@
 package com.clearent.device.config;
 
-import com.clearent.device.ClearentOnReceiverListener;
 import com.clearent.device.Clearent_VP3300;
-import com.clearent.device.config.ClearentConfigurator;
 import com.idtechproducts.device.ErrorCode;
 //TODO singleton ?
 public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
     private static final String RELATIVE_URL = "rest/v2/mobile/devices";
 
-    private String baseUrl;
-    private String publicKey;
-    private boolean configured;
-    private ClearentOnReceiverListener clearentOnReceiverListener;
+    private boolean configured = false;
 
-    public ClearentConfiguratorImpl(String baseUrl, String publicKey, boolean configured, ClearentOnReceiverListener clearentOnReceiverListener) {
-        this.baseUrl = baseUrl;
-        this.publicKey = publicKey;
-        this.configured = configured;
-        this.clearentOnReceiverListener = clearentOnReceiverListener;
+    public ClearentConfiguratorImpl() {
+
     }
 
     @Override
@@ -68,8 +60,8 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
 //        };
 //
 //    [clearentConfigFetcher fetchConfiguration: clearentConfigFetcherResponse];
-        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentOnReceiverListener, clearentVp3300);
-        ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(baseUrl,publicKey,stringBuilderSerialNumber.toString(),stringBuilderKernelVersion.toString());
+        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentVp3300);
+        ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(clearentVp3300.getPaymentsBaseUrl(),clearentVp3300.getPaymentsPublicKey(),stringBuilderSerialNumber.toString(),stringBuilderKernelVersion.toString());
         clearentConfigFetcher.fetchConfiguration(clearentConfigFetcherResponseHandler);
     }
 

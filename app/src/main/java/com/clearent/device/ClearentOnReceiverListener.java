@@ -1,6 +1,7 @@
 package com.clearent.device;
 
 import com.clearent.device.config.ClearentConfigurator;
+import com.clearent.device.config.ClearentConfiguratorImpl;
 import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.IDTMSRData;
 import com.idtechproducts.device.OnReceiverListener;
@@ -8,16 +9,14 @@ import com.idtechproducts.device.StructConfigParameters;
 
 public class ClearentOnReceiverListener implements OnReceiverListener {
 
+    private Clearent_VP3300 clearentVp3300;
     private PublicOnReceiverListener publicOnReceiverListener;
-    private String paymentsBaseUrl;
-    private String paymentsPublicKey;
 
     private ClearentConfigurator clearentConfigurator;
 
-    public ClearentOnReceiverListener(PublicOnReceiverListener publicOnReceiverListener, String paymentsBaseUrl, String paymentsPublicKey) {
+    public ClearentOnReceiverListener(Clearent_VP3300 clearentVp3300, PublicOnReceiverListener publicOnReceiverListener) {
+        this.clearentVp3300 = clearentVp3300;
         this.publicOnReceiverListener = publicOnReceiverListener;
-        this.paymentsBaseUrl = paymentsBaseUrl;
-        this.paymentsPublicKey = paymentsPublicKey;
     }
 
     @Override
@@ -49,8 +48,8 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         //[self deviceMessage:@"VIVOpay connected. Waiting for configuration to complete..."];
         //TODO how do we get the kernel version and the serial number without access to the idt_vp3300 object ? add to composition ?
 
-        //TODO DAVE H. START HERE !!!!!
-       // clearentConfigurator.configure(this);
+        ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl();
+        clearentConfigurator.configure(clearentVp3300);
     }
 
     @Override

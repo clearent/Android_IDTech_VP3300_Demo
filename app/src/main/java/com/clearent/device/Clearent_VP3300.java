@@ -6,7 +6,6 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
-//TODO Discuss the static implementation.
 public class Clearent_VP3300 {
 
     private static IDT_VP3300 idt_VP3300;
@@ -15,16 +14,15 @@ public class Clearent_VP3300 {
     private PublicOnReceiverListener publicOnReceiverListener;
     private ClearentOnReceiverListener clearentOnReceiverListener;
 
-    //TODO create an interface (contract)
     public Clearent_VP3300(PublicOnReceiverListener callback, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
-        ClearentOnReceiverListener clearentOnReceiverListener = new ClearentOnReceiverListener(callback, paymentsBaseUrl, paymentsPublicKey);
+        ClearentOnReceiverListener clearentOnReceiverListener = new ClearentOnReceiverListener(this, callback);
         idt_VP3300 = new IDT_VP3300(clearentOnReceiverListener, context);
         this.paymentsBaseUrl = paymentsBaseUrl;
         this.paymentsPublicKey = paymentsPublicKey;
     }
 
     public Clearent_VP3300(PublicOnReceiverListener callback, OnReceiverListenerPINRequest callback2, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
-        ClearentOnReceiverListener clearentOnReceiverListener = new ClearentOnReceiverListener(callback, paymentsBaseUrl, paymentsPublicKey);
+        ClearentOnReceiverListener clearentOnReceiverListener = new ClearentOnReceiverListener(this, callback);
         idt_VP3300 = new IDT_VP3300(clearentOnReceiverListener, callback2, context);
         this.paymentsBaseUrl = paymentsBaseUrl;
         this.paymentsPublicKey = paymentsPublicKey;
@@ -458,6 +456,38 @@ public class Clearent_VP3300 {
 
     public int ctls_cancelTransaction() {
         return idt_VP3300.getSDKInstance().ctls_cancelTransaction();
+    }
+
+    public String getPaymentsBaseUrl() {
+        return paymentsBaseUrl;
+    }
+
+    public void setPaymentsBaseUrl(String paymentsBaseUrl) {
+        this.paymentsBaseUrl = paymentsBaseUrl;
+    }
+
+    public String getPaymentsPublicKey() {
+        return paymentsPublicKey;
+    }
+
+    public void setPaymentsPublicKey(String paymentsPublicKey) {
+        this.paymentsPublicKey = paymentsPublicKey;
+    }
+
+    public PublicOnReceiverListener getPublicOnReceiverListener() {
+        return publicOnReceiverListener;
+    }
+
+    public void setPublicOnReceiverListener(PublicOnReceiverListener publicOnReceiverListener) {
+        this.publicOnReceiverListener = publicOnReceiverListener;
+    }
+
+    public ClearentOnReceiverListener getClearentOnReceiverListener() {
+        return clearentOnReceiverListener;
+    }
+
+    public void setClearentOnReceiverListener(ClearentOnReceiverListener clearentOnReceiverListener) {
+        this.clearentOnReceiverListener = clearentOnReceiverListener;
     }
 }
 

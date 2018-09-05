@@ -1,6 +1,5 @@
 package com.clearent.device.config;
 
-import com.clearent.device.ClearentOnReceiverListener;
 import com.clearent.device.Clearent_VP3300;
 import com.clearent.device.config.domain.CaPublicKey;
 import com.clearent.device.config.domain.ConfigurationResponse;
@@ -16,11 +15,9 @@ import java.util.Map;
 
 public class ClearentConfigFetcherResponseHandler {
 
-    private ClearentOnReceiverListener clearentOnReceiverListener;
     private Clearent_VP3300 clearentVp3300;
 
-    public ClearentConfigFetcherResponseHandler(ClearentOnReceiverListener clearentOnReceiverListener, Clearent_VP3300 clearentVp3300) {
-        this.clearentOnReceiverListener = clearentOnReceiverListener;
+    public ClearentConfigFetcherResponseHandler(Clearent_VP3300 clearentVp3300) {
         this.clearentVp3300 = clearentVp3300;
     }
 
@@ -39,7 +36,7 @@ public class ClearentConfigFetcherResponseHandler {
 
     private void configureCaPublicKeys(List<CaPublicKey> caPublicKeys) {
         if(caPublicKeys == null || caPublicKeys.isEmpty()) {
-            System.out.println("no ca pulbi keys to configure...error ?");
+            System.out.println("no ca public keys to configure...error ?");
             return;
         }
 
