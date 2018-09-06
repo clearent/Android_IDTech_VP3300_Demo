@@ -1,11 +1,20 @@
 package com.clearent.device;
 
+import android.os.AsyncTask;
+import android.util.Log;
+
 import com.clearent.device.config.ClearentConfigurator;
 import com.clearent.device.config.ClearentConfiguratorImpl;
 import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.IDTMSRData;
 import com.idtechproducts.device.OnReceiverListener;
 import com.idtechproducts.device.StructConfigParameters;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+
+import javax.net.ssl.HttpsURLConnection;
 
 public class ClearentOnReceiverListener implements OnReceiverListener {
 
@@ -27,17 +36,18 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 
     @Override
     public void lcdDisplay(int i, String[] strings, int i1) {
-        publicOnReceiverListener.lcdDisplay(i,strings,i1);
+        publicOnReceiverListener.lcdDisplay(i, strings, i1);
     }
 
     @Override
     public void lcdDisplay(int i, String[] strings, int i1, byte[] bytes, byte b) {
-        publicOnReceiverListener.lcdDisplay(i,strings,i1,bytes,b);
+        publicOnReceiverListener.lcdDisplay(i, strings, i1, bytes, b);
     }
 
     @Override
     public void emvTransactionData(IDTEMVData idtemvData) {
         //TODO happy path call the mobile-jwt service
+        IDTEMVData card = idtemvData;
         publicOnReceiverListener.successfulTransactionToken("tokenFromSuccessfulDip");
     }
 
@@ -50,6 +60,8 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 
         ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl();
         clearentConfigurator.configure(clearentVp3300);
+        //TODO DAVE H. START HERE !!!!!
+        // clearentConfigurator.configure(this);
     }
 
     @Override
@@ -79,7 +91,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 
     @Override
     public void ICCNotifyInfo(byte[] bytes, String s) {
-        publicOnReceiverListener.ICCNotifyInfo(bytes,s);
+        publicOnReceiverListener.ICCNotifyInfo(bytes, s);
     }
 
     @Override
@@ -89,7 +101,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 
     @Override
     public void LoadXMLConfigFailureInfo(int i, String s) {
-        publicOnReceiverListener.LoadXMLConfigFailureInfo(i,s);
+        publicOnReceiverListener.LoadXMLConfigFailureInfo(i, s);
     }
 
     @Override
@@ -104,6 +116,6 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 
     @Override
     public void dataInOutMonitor(byte[] bytes, boolean b) {
-        publicOnReceiverListener.dataInOutMonitor(bytes,b);
+        publicOnReceiverListener.dataInOutMonitor(bytes, b);
     }
 }

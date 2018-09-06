@@ -1,5 +1,7 @@
 package com.clearent.device.config;
 
+import android.util.Log;
+
 //TODO new object needed ?
 public class ClearentConfigFetcherImpl implements ClearentConfigFetcher {
 
@@ -16,12 +18,17 @@ public class ClearentConfigFetcherImpl implements ClearentConfigFetcher {
     }
 
     @Override
-    public void fetchConfiguration(ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler) {
+    public void fetchConfiguration(final ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler) {
              //TODO rest call to mobile-devices
-        //call handler method onsuccess. otherwise send null back. the handler will communicate the results
-        clearentConfigFetcherResponseHandler.handleResponse("this is the mobile device response");
+        new GetConfigurationTask(new GetConfigurationTask.AsyncResponse() {
+            @Override
+            public void processFinish(String output) {
+                Log.i("OUTPUT", output);
+                clearentConfigFetcherResponseHandler.handleResponse(output);
+            }
+        }).execute();
+//        clearentConfigFetcherResponseHandler.handleResponse("this is the mobile device response");
     }
-
 
 //
 //- (NSMutableURLRequest*) createNSMutableURLRequest {
