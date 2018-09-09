@@ -3,11 +3,26 @@ package com.clearent.device.config;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.idtechproducts.device.audiojack.UMLog;
+import com.idtechproducts.device.audiojack.config.UmXmlParser;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
 public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
 
@@ -37,16 +52,20 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
                 }
                 bufferedReader.close();
                 return stringBuilder.toString();
-            } finally {
-                urlConnection.disconnect();
+                //had problems at home calling qa. so I used postman to get the json and worked with it locally
+                //TODO Consider a fallback similar to android device fallback ? or do we assert "If the internet is up our services are too ?"
+                // return loadJSON();
+            } catch (Exception e) {
+                Log.e("ERROR", e.getMessage(), e);
+                return null;
             }
-        } catch (Exception e) {
-            Log.e("ERROR", e.getMessage(), e);
-            return null;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-
-    @Override
+        @Override
     protected void onPostExecute(String response) {
         if (response == null) {
             response = "THERE WAS AN ERROR";
@@ -55,4 +74,21 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
         delegate.processFinish(response);
     }
 
+    public String loadJSON() {
+        String json = null;
+        try {
+            String file = "res/raw/testconfig.json";
+            InputStream in = this.getClass().getClassLoader().getResourceAsStream(file);
+            int size = in.available();
+            byte[] buffer = new byte[size];
+            in.read(buffer);
+            in.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
+
+    }
 }

@@ -2363,7 +2363,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void getProfileResult(String output) {
-            if (output.equals("404")) {
+            if (output.equals("404") || output.contains("failed to connect")) {
                 Toast.makeText(getActivity(), "Profile not found. trying xml", Toast.LENGTH_SHORT).show();
                 String filepath = getXMLFileFromRaw();
                 if (!isFileExist(filepath)) {

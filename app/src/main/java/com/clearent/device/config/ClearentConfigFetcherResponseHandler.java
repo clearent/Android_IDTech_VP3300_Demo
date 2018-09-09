@@ -9,6 +9,9 @@ import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ResDataStruct;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -69,13 +72,13 @@ public class ClearentConfigFetcherResponseHandler {
         }
 
         for(MobileContactAid mobileContactAid:mobileContactAids) {
-            String tlv = convertToTlv(mobileContactAid.getValues());
+            byte[] values = aidValuesAsByteArray(mobileContactAid.getValues());
             ResDataStruct resData = new ResDataStruct();
-            int ret = clearentVp3300.emv_setApplicationData(mobileContactAid.getName(), tlv.getBytes(), resData);
+            int ret = clearentVp3300.emv_setApplicationData(mobileContactAid.getName(), values, resData);
             //TODO communicate errors
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
-                    System.out.println( "EMV create AID " + mobileContactAid.getName() + " Succeeded\n");
+                    System.out.println("EMV create AID " + mobileContactAid.getName() + " Succeeded\n");
                 } else {
                     String info = "EMV create AID " + mobileContactAid.getName() + " Failed\n";
                     info += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
@@ -86,19 +89,23 @@ public class ClearentConfigFetcherResponseHandler {
                 info += "Status: " + clearentVp3300.device_getResponseCodeString(ret) + "";
                 System.out.println(info);
             }
-
         }
+    }
+
+    public byte[] aidValuesAsByteArray(Map<String,String> values) {
+        String tlv = convertToTlv(values);
+        return Common.getByteArray(tlv);
     }
 
     public String convertToTlv(Map<String,String> values) {
         StringBuilder stringBuilder = new StringBuilder();
         for(Map.Entry<String, String> entry: values.entrySet()) {
             String tag = entry.getKey();
-            String length = Integer.toHexString(tag.length());
             String value = entry.getValue();
-            stringBuilder.append(tag+length+value);
+            int valueLength = value.length()/2;
+            String length = String.format("%02X", valueLength);
+            stringBuilder.append(tag + length + value);
         }
         return stringBuilder.toString();
     }
-
 }

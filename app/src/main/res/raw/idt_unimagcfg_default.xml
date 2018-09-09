@@ -45,6 +45,7 @@
    <support_status val="ump=s;um2=s;um2i=s;shuttle=s"> </support_status>
    <directionOutputWave>0</directionOutputWave>
    <InputFreq>48000</InputFreq>
+   <InputFreq>48000</InputFreq>
    <OutputFreq>24000</OutputFreq>
    <baudRate>9600</baudRate>
   </kfaswi> 

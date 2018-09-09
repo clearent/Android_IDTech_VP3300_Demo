@@ -1,15 +1,36 @@
 package com.clearent.device.token.domain;
 
+
+import com.google.gson.annotations.SerializedName;
+
 public class ClearentTransactionTokenRequest {
 
+    @SerializedName("tlv")
     private String tlv;
+
+    @SerializedName("encrypted")
     private boolean encrypted;
+
+    @SerializedName("emv")
     private boolean emv;
+
+    @SerializedName("firmware-version")
     private String firmwareVersion;
+
+    @SerializedName("device-serial-number")
     private String deviceSerialNumber;
+
+    @SerializedName("kernel-version")
     private String kernelVersion;
+
+    @SerializedName("track2-data")
     private String track2Data;
+
+    @SerializedName("application-preferred-name-tag-9f12")
     private String applicationPreferredNameTag9F12;
+
+    @SerializedName("device-format")
+    private String deviceFormat = "IDTECH";
 
     public ClearentTransactionTokenRequest() {
 
@@ -79,9 +100,11 @@ public class ClearentTransactionTokenRequest {
         this.applicationPreferredNameTag9F12 = applicationPreferredNameTag9F12;
     }
 
-    public String asJson() {
-        //TODO how to convert to json
-        return "";
+    public String getDeviceFormat() {
+        return deviceFormat;
     }
 
+    public void setDeviceFormat(String deviceFormat) {
+        this.deviceFormat = deviceFormat;
+    }
 }
