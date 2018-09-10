@@ -1,10 +1,15 @@
 package com.clearent.device.config;
 
+import android.util.Log;
+
 import com.clearent.device.ClearentOnReceiverListener;
 import com.clearent.device.Clearent_VP3300;
 import com.clearent.device.config.domain.ConfigFetchRequest;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ResDataStruct;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
@@ -15,15 +20,15 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
     private ClearentOnReceiverListener clearentOnReceiverListener;
 
     public ClearentConfiguratorImpl(Clearent_VP3300 clearentVp3300, ClearentOnReceiverListener clearentOnReceiverListener) {
-       this.clearentVp3300 = clearentVp3300;
-       this.clearentOnReceiverListener = clearentOnReceiverListener;
+        this.clearentVp3300 = clearentVp3300;
+        this.clearentOnReceiverListener = clearentOnReceiverListener;
     }
 
     @Override
     public void configure() {
-        if(configured) {
+        if (configured) {
             String[] message = {"VIVOpay configured and ready"};
-            clearentOnReceiverListener.lcdDisplay(0,message,0);
+            clearentOnReceiverListener.lcdDisplay(0, message, 0);
             return;
         }
 
@@ -39,7 +44,7 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
             info += "Status: " + clearentVp3300.device_getResponseCodeString(serialNumberRt) + "";
             System.out.println(info);
             String[] message = {info};
-            clearentOnReceiverListener.lcdDisplay(0,message,0);
+            clearentOnReceiverListener.lcdDisplay(0, message, 0);
             return;
         }
 
@@ -53,14 +58,17 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
             info += "Status: " + clearentVp3300.device_getResponseCodeString(kernelVersionRt) + "";
             System.out.println(info);
             String[] message = {info};
-            clearentOnReceiverListener.lcdDisplay(0,message,0);
+            clearentOnReceiverListener.lcdDisplay(0, message, 0);
             return;
         }
 
         //TODO init the clock
 //    [self initClock];
 //
-        ConfigFetchRequest configFetchRequest = new ConfigFetchRequest(clearentVp3300.getPaymentsBaseUrl(),clearentVp3300.getPaymentsPublicKey(),stringBuilderSerialNumber.toString(),stringBuilderKernelVersion.toString());
+        initClock();
+
+        stringBuilderKernelVersion.insert(0, "EM");
+        ConfigFetchRequest configFetchRequest = new ConfigFetchRequest(clearentVp3300.getPaymentsBaseUrl(), clearentVp3300.getPaymentsPublicKey(), stringBuilderSerialNumber.toString(), stringBuilderKernelVersion.toString());
         ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentVp3300, this);
         ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(configFetchRequest);
         clearentConfigFetcher.fetchConfiguration(clearentConfigFetcherResponseHandler);
@@ -68,17 +76,52 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
     private void setTerminalMajorConfiguration() {
         ResDataStruct resDataStruct = new ResDataStruct();
-        int commandRt = clearentVp3300.device_sendDataCommand("6016",false, "05", resDataStruct);
+        int commandRt = clearentVp3300.device_sendDataCommand("6016", false, "05", resDataStruct);
         if (commandRt == ErrorCode.SUCCESS) {
             String info = "Terminal Major Configuration Succeeded ";
             String[] message = {info};
-            clearentOnReceiverListener.lcdDisplay(0,message,0);
+            clearentOnReceiverListener.lcdDisplay(0, message, 0);
         } else {
             String info = "Terminal Major Configuration Failed. ";
             info += "Status: " + clearentVp3300.device_getResponseCodeString(commandRt) + "";
             String[] message = {info};
-            clearentOnReceiverListener.lcdDisplay(0,message,0);
+            clearentOnReceiverListener.lcdDisplay(0, message, 0);
         }
+    }
+
+    private int initClock() {
+        int dateRt = initClockDate();
+        int timeRt = initClockTime();
+        if (0 == dateRt && 0 == timeRt) {
+            Log.i("INFO", "Clock Initialized");
+        } else {
+            return 1;
+        }
+        return 0;
+    }
+
+    private int initClockDate() {
+        String clockDate = getClockDateAsYYYYMMDD();
+        ResDataStruct resDataStruct = new ResDataStruct();
+        return clearentVp3300.device_sendDataCommand("0x25", false, clockDate, resDataStruct);
+    }
+
+    private String getClockDateAsYYYYMMDD() {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+        String date = simpleDateFormat.format(new Date());
+        return date;
+    }
+
+    private int initClockTime() {
+        String clockTime = getClockTimeAsHHMM();
+        ResDataStruct resDataStruct = new ResDataStruct();
+        return clearentVp3300.device_sendDataCommand("0x25", false, clockTime, resDataStruct);
+    }
+
+    private String getClockTimeAsHHMM() {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HHmm");
+        String time = simpleDateFormat.format(new Date());
+        return time;
     }
 
 //
@@ -130,12 +173,12 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
     public void notifyReady() {
         this.configured = true;
         String[] message = {"VIVOpay configured and ready"};
-        clearentOnReceiverListener.lcdDisplay(0,message,0);
+        clearentOnReceiverListener.lcdDisplay(0, message, 0);
     }
 
     @Override
     public void notifyFailure(String message) {
         String[] messageArray = {message};
-        clearentOnReceiverListener.lcdDisplay(0,messageArray,0);
+        clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
     }
 }

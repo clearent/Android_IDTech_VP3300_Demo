@@ -1,5 +1,6 @@
 package com.clearent.device.config;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -19,6 +20,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.xml.parsers.ParserConfigurationException;
@@ -45,7 +47,8 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
     @Override
     protected String doInBackground(Void... voids) {
         try {
-            URL url = new URL(configFetchRequest.getBaseUrl() + RELATIVE_PATH + "/" + configFetchRequest.getDeviceSerialNumber() + "/" + configFetchRequest.getKernelVersion());
+            String encodedKernelVersion = Uri.encode(configFetchRequest.getKernelVersion());
+            URL url = new URL(configFetchRequest.getBaseUrl() + RELATIVE_PATH + "/" + configFetchRequest.getDeviceSerialNumber() + "/" + encodedKernelVersion);
 //            URL url = new URL("https://mobile-devices-qa.clearent.net/rest/v2/mobile/devices/737T003758/EMV%20Common%20L2%20V1.10");
             HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
             urlConnection.setRequestProperty("public-key", configFetchRequest.getPublicKey());
