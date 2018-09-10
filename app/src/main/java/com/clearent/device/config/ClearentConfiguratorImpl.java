@@ -4,6 +4,7 @@ import com.clearent.device.ClearentOnReceiverListener;
 import com.clearent.device.Clearent_VP3300;
 import com.clearent.device.config.domain.ConfigFetchRequest;
 import com.idtechproducts.device.ErrorCode;
+import com.idtechproducts.device.ResDataStruct;
 
 public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
@@ -25,6 +26,8 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
             clearentOnReceiverListener.lcdDisplay(0,message,0);
             return;
         }
+
+        setTerminalMajorConfiguration();
 
         StringBuilder stringBuilderSerialNumber = new StringBuilder();
         int serialNumberRt = clearentVp3300.config_getSerialNumber(stringBuilderSerialNumber);
@@ -61,6 +64,21 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
         ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentVp3300, this);
         ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(configFetchRequest);
         clearentConfigFetcher.fetchConfiguration(clearentConfigFetcherResponseHandler);
+    }
+
+    private void setTerminalMajorConfiguration() {
+        ResDataStruct resDataStruct = new ResDataStruct();
+        int commandRt = clearentVp3300.device_sendDataCommand("6016",false, "05", resDataStruct);
+        if (commandRt == ErrorCode.SUCCESS) {
+            String info = "Terminal Major Configuration Succeeded ";
+            String[] message = {info};
+            clearentOnReceiverListener.lcdDisplay(0,message,0);
+        } else {
+            String info = "Terminal Major Configuration Failed. ";
+            info += "Status: " + clearentVp3300.device_getResponseCodeString(commandRt) + "";
+            String[] message = {info};
+            clearentOnReceiverListener.lcdDisplay(0,message,0);
+        }
     }
 
 //
