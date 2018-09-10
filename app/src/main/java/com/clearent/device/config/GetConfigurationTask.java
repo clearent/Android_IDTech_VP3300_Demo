@@ -3,6 +3,7 @@ package com.clearent.device.config;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.clearent.device.config.domain.ConfigFetchRequest;
 import com.idtechproducts.device.audiojack.UMLog;
 import com.idtechproducts.device.audiojack.config.UmXmlParser;
 
@@ -30,18 +31,24 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
         void processFinish(String output);
     }
 
+    private static final String RELATIVE_PATH = "/rest/v2/mobile/devices";
+
+    private ConfigFetchRequest configFetchRequest;
+
     public AsyncResponse delegate = null;
 
-    public GetConfigurationTask(AsyncResponse delegate) {
+    public GetConfigurationTask(ConfigFetchRequest configFetchRequest, AsyncResponse delegate) {
+        this.configFetchRequest = configFetchRequest;
         this.delegate = delegate;
     }
 
     @Override
     protected String doInBackground(Void... voids) {
         try {
-            URL url = new URL("https://mobile-devices-qa.clearent.net/rest/v2/mobile/devices/737T003758/EMV%20Common%20L2%20V1.10");
+            URL url = new URL(configFetchRequest.getBaseUrl() + RELATIVE_PATH + "/" + configFetchRequest.getDeviceSerialNumber() + "/" + configFetchRequest.getKernelVersion());
+//            URL url = new URL("https://mobile-devices-qa.clearent.net/rest/v2/mobile/devices/737T003758/EMV%20Common%20L2%20V1.10");
             HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-            urlConnection.setRequestProperty("api-key", "12fa1a5617464354a72b3c9eb92d4f3b");
+            urlConnection.setRequestProperty("public-key", configFetchRequest.getPublicKey());
             urlConnection.setRequestProperty("Accept", "application/json");
             try {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
@@ -54,7 +61,7 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
                 return stringBuilder.toString();
                 //had problems at home calling qa. so I used postman to get the json and worked with it locally
                 //TODO Consider a fallback similar to android device fallback ? or do we assert "If the internet is up our services are too ?"
-                // return loadJSON();
+                //return loadJSON();
             } catch (Exception e) {
                 Log.e("ERROR", e.getMessage(), e);
                 return null;
@@ -64,8 +71,10 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return null;
     }
-        @Override
+
+    @Override
     protected void onPostExecute(String response) {
         if (response == null) {
             response = "THERE WAS AN ERROR";

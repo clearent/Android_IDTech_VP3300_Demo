@@ -2,24 +2,19 @@ package com.clearent.device.config;
 
 import android.util.Log;
 
-//TODO new object needed ?
+import com.clearent.device.config.domain.ConfigFetchRequest;
+
 public class ClearentConfigFetcherImpl implements ClearentConfigFetcher {
 
-    private String baseUrl;
-    private String publicKey;
-    private String deviceSerialNumber;
-    private String kernelVersion;
+    private ConfigFetchRequest configFetchRequest;
 
-    public ClearentConfigFetcherImpl(String baseUrl, String publicKey, String deviceSerialNumber, String kernelVersion) {
-        this.baseUrl = baseUrl;
-        this.publicKey = publicKey;
-        this.deviceSerialNumber = deviceSerialNumber;
-        this.kernelVersion = kernelVersion;
+    public ClearentConfigFetcherImpl(ConfigFetchRequest configFetchRequest) {
+        this.configFetchRequest = configFetchRequest;
     }
 
     @Override
     public void fetchConfiguration(final ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler) {
-        new GetConfigurationTask(new GetConfigurationTask.AsyncResponse() {
+        new GetConfigurationTask(configFetchRequest, new GetConfigurationTask.AsyncResponse() {
             @Override
             public void processFinish(String output) {
                 Log.i("OUTPUT", output);

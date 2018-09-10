@@ -634,7 +634,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         int finalTimout;
 
         public void lcdDisplay(int mode, String[] lines, int timeout) {
-
+//TODO send messages here. mode 0 ? timeout 0 ?
         }
 
         public void lcdDisplay(int mode, String[] lines, int timeout, byte[] languageCode, byte messageId) {

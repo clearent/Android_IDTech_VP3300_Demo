@@ -40,20 +40,8 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     public ClearentOnReceiverListener(Clearent_VP3300 clearentVp3300, PublicOnReceiverListener publicOnReceiverListener) {
         this.clearentVp3300 = clearentVp3300;
         this.publicOnReceiverListener = publicOnReceiverListener;
+        this.clearentConfigurator = new ClearentConfiguratorImpl(clearentVp3300, this);
     }
-
-//add this to lcdDisplay because it looks like we need to use that method to communicate through the listener
-//    - (void) deviceMessage:(NSString*)message {
-//        if(message != nil && [message isEqualToString:@"POWERING UNIPAY"]) {
-//       [self.publicDelegate deviceMessage:@"Starting VIVOpay..."];
-//            return;
-//        }
-//        if(message != nil && [message isEqualToString:@"RETURN_CODE_LOW_VOLUME"]) {
-//        [self.publicDelegate deviceMessage:@"VIVOpay failed to connect.Turn the headphones volume all the way up and reconnect."];
-//            return;
-//        }
-//    [self.publicDelegate deviceMessage:message];
-//    }
 
     @Override
     public void swipeMSRData(IDTMSRData idtmsrData) {
@@ -127,6 +115,23 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         return "IDTech Firmware Version Unknown";
     }
 
+
+//TODO we need to inspect the messages coming back in lcdDisplay methods and changed them to the messages we are sending back
+    //in the ios framework too
+
+    //add this to lcdDisplay because it looks like we need to use that method to communicate through the listener
+//    - (void) deviceMessage:(NSString*)message {
+//        if(message != nil && [message isEqualToString:@"POWERING UNIPAY"]) {
+//       [self.publicDelegate deviceMessage:@"Starting VIVOpay..."];
+//            return;
+//        }
+//        if(message != nil && [message isEqualToString:@"RETURN_CODE_LOW_VOLUME"]) {
+//        [self.publicDelegate deviceMessage:@"VIVOpay failed to connect.Turn the headphones volume all the way up and reconnect."];
+//            return;
+//        }
+//    [self.publicDelegate deviceMessage:message];
+//    }
+
     @Override
     public void lcdDisplay(int i, String[] strings, int i1) {
         publicOnReceiverListener.lcdDisplay(i, strings, i1);
@@ -146,7 +151,8 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 //
 //        NSLog(@"EMV Transaction Data Response: = %@",[[IDT_VP3300 sharedController] device_getResponseCodeString:error]);
 //
-        //As we test we could implement each of these short circuits or eave them out
+        //TODO As we test we could implement each of these short circuits or leave them out
+
 //        if (emvData.resultCodeV2 != EMV_RESULT_CODE_V2_NO_RESPONSE) {
 //            NSLog(@"emvData.resultCodeV2: = %@",[NSString stringWithFormat:@"EMV_RESULT_CODE_V2_response = %2X",emvData.resultCodeV2]);
 //        }
@@ -231,12 +237,12 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     @Override
     public void deviceConnected() {
         publicOnReceiverListener.deviceConnected();
-        //TODO How do we send messages back ? just use the lcdDisplay method ??
-        //[self deviceMessage:@"VIVOpay connected. Waiting for configuration to complete..."];
-        //TODO how do we get the kernel version and the serial number without access to the idt_vp3300 object ? add to composition ?
+        String[] message = {"VIVOpay connected. Waiting for configuration to complete..."};
+        publicOnReceiverListener.lcdDisplay(0,message,0);
 
-        ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl();
-        clearentConfigurator.configure(clearentVp3300);
+        if(!clearentConfigurator.isConfigured()) {
+            clearentConfigurator.configure();
+        }
     }
 
     @Override

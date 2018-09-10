@@ -1,7 +1,13 @@
 package com.clearent.device.config;
 
+import com.clearent.device.ClearentOnReceiverListener;
 import com.clearent.device.Clearent_VP3300;
 
 public interface ClearentConfigurator {
-    void configure(Clearent_VP3300 clearentVp3300);
+    boolean isConfigured();
+
+    void notifyReady();
+    void notifyFailure(String error);
+
+    void configure();
 }

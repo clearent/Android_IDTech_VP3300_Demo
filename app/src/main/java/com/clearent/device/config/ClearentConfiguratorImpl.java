@@ -1,22 +1,28 @@
 package com.clearent.device.config;
 
+import com.clearent.device.ClearentOnReceiverListener;
 import com.clearent.device.Clearent_VP3300;
+import com.clearent.device.config.domain.ConfigFetchRequest;
 import com.idtechproducts.device.ErrorCode;
-//TODO singleton ?
+
 public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
     private static final String RELATIVE_URL = "rest/v2/mobile/devices";
 
     private boolean configured = false;
+    private Clearent_VP3300 clearentVp3300;
+    private ClearentOnReceiverListener clearentOnReceiverListener;
 
-    public ClearentConfiguratorImpl() {
-
+    public ClearentConfiguratorImpl(Clearent_VP3300 clearentVp3300, ClearentOnReceiverListener clearentOnReceiverListener) {
+       this.clearentVp3300 = clearentVp3300;
+       this.clearentOnReceiverListener = clearentOnReceiverListener;
     }
 
     @Override
-    public void configure(Clearent_VP3300 clearentVp3300) {
+    public void configure() {
         if(configured) {
-            //TODO notify already configured
+            String[] message = {"VIVOpay configured and ready"};
+            clearentOnReceiverListener.lcdDisplay(0,message,0);
             return;
         }
 
@@ -29,7 +35,8 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
             String info = "GetSerialNumber: Failed\n";
             info += "Status: " + clearentVp3300.device_getResponseCodeString(serialNumberRt) + "";
             System.out.println(info);
-            //notify through listener...
+            String[] message = {info};
+            clearentOnReceiverListener.lcdDisplay(0,message,0);
             return;
         }
 
@@ -42,26 +49,17 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
             String info = "Kernel version: Failed\n";
             info += "Status: " + clearentVp3300.device_getResponseCodeString(kernelVersionRt) + "";
             System.out.println(info);
-            //notify through listener...
+            String[] message = {info};
+            clearentOnReceiverListener.lcdDisplay(0,message,0);
             return;
         }
 
         //TODO init the clock
 //    [self initClock];
 //
-//        ClearentConfigFetcher *clearentConfigFetcher = [[ClearentConfigFetcher alloc] init:[NSURLSession sharedSession] baseUrl:self.baseUrl deviceSerialNumber:deviceSerialNumber kernelVersion:kernelVersion publicKey:self.publicKey];
-//
-//        ClearentConfigFetcherResponse clearentConfigFetcherResponse = ^(NSDictionary *json) {
-//            if(json != nil) {
-//            [self configure:json];
-//            } else {
-//            [self notify:@"VIVOpay failed to retrieve configuration"];
-//            }
-//        };
-//
-//    [clearentConfigFetcher fetchConfiguration: clearentConfigFetcherResponse];
-        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentVp3300);
-        ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(clearentVp3300.getPaymentsBaseUrl(),clearentVp3300.getPaymentsPublicKey(),stringBuilderSerialNumber.toString(),stringBuilderKernelVersion.toString());
+        ConfigFetchRequest configFetchRequest = new ConfigFetchRequest(clearentVp3300.getPaymentsBaseUrl(),clearentVp3300.getPaymentsPublicKey(),stringBuilderSerialNumber.toString(),stringBuilderKernelVersion.toString());
+        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentVp3300, this);
+        ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(configFetchRequest);
         clearentConfigFetcher.fetchConfiguration(clearentConfigFetcherResponseHandler);
     }
 
@@ -103,4 +101,23 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
 //        return [IDTUtility hexToData:timeString];
 //    }
 //
+
+
+    @Override
+    public boolean isConfigured() {
+        return configured;
+    }
+
+    @Override
+    public void notifyReady() {
+        this.configured = true;
+        String[] message = {"VIVOpay configured and ready"};
+        clearentOnReceiverListener.lcdDisplay(0,message,0);
+    }
+
+    @Override
+    public void notifyFailure(String message) {
+        String[] messageArray = {message};
+        clearentOnReceiverListener.lcdDisplay(0,messageArray,0);
+    }
 }

@@ -1,5 +1,7 @@
 package com.clearent.device.config;
 
+import android.util.Log;
+
 import com.clearent.device.Clearent_VP3300;
 import com.clearent.device.config.domain.CaPublicKey;
 import com.clearent.device.config.domain.ConfigurationResponse;
@@ -19,47 +21,49 @@ import java.util.Map;
 public class ClearentConfigFetcherResponseHandler {
 
     private Clearent_VP3300 clearentVp3300;
+    private ClearentConfigurator clearentConfigurator;
 
-    public ClearentConfigFetcherResponseHandler(Clearent_VP3300 clearentVp3300) {
+    public ClearentConfigFetcherResponseHandler(Clearent_VP3300 clearentVp3300, ClearentConfigurator clearentConfigurator) {
         this.clearentVp3300 = clearentVp3300;
+        this.clearentConfigurator = clearentConfigurator;
     }
 
     public void handleResponse(String json) {
         Gson gson = new Gson();
         try {
             ConfigurationResponse configurationResponse = gson.fromJson(json, ConfigurationResponse.class);
-
             configureAids(configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids());
             configureCaPublicKeys(configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys());
+            clearentConfigurator.notifyReady();
         } catch (Exception e) {
-            System.out.println("failed to parse clearent configuration");
-            //TODO notify of failure
+            clearentConfigurator.notifyFailure("VIVOpay failed to retrieve configuration");
         }
     }
 
     private void configureCaPublicKeys(List<CaPublicKey> caPublicKeys) {
         if(caPublicKeys == null || caPublicKeys.isEmpty()) {
-            System.out.println("no ca public keys to configure...error ?");
+            Log.i("INFO", "No ca public keys to configure");
             return;
         }
 
         for(CaPublicKey caPublicKey:caPublicKeys) {
             byte[] caPublickeyOrdered = Common.getByteArray(caPublicKey.getOrderedValues());
             ResDataStruct resData = new ResDataStruct();
-            //TODO communicate errors
             int ret = clearentVp3300.emv_setCAPK(caPublickeyOrdered, resData);
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
-                    System.out.println( "EMV Create RID A000009999 Index E1 Succeeded\n");
+                    Log.i("INFO","EMV Ca Public Key " + caPublicKey.getName() + " Added ");
                 } else {
-                    String info = "EMV Create AID A000009999 Index E1 Failed\n";
-                    info += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
-                    System.out.println(info);
+                    String error = "EMV Ca Public Key " + caPublicKey.getName() + " Failed. ";
+                    error += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
+                    clearentConfigurator.notifyFailure(error);
+                    notifyFailure(error);
                 }
             } else {
-                String info = "EMV Create AID A000009999 Index E1 Failed\n";
-                info += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
-                System.out.println(info);
+                String error = "EMV Ca Public Key " + caPublicKey.getName() + " Failed. ";
+                error += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
+                clearentConfigurator.notifyFailure(error);
+                notifyFailure(error);
             }
         }
     }
@@ -67,7 +71,7 @@ public class ClearentConfigFetcherResponseHandler {
     private void configureAids(List<MobileContactAid> mobileContactAids) {
 
         if(mobileContactAids == null || mobileContactAids.isEmpty()) {
-            System.out.println("no contact aids to configure...error ?");
+            Log.i("INFO", "No contact aids to configure");
             return;
         }
 
@@ -75,19 +79,18 @@ public class ClearentConfigFetcherResponseHandler {
             byte[] values = aidValuesAsByteArray(mobileContactAid.getValues());
             ResDataStruct resData = new ResDataStruct();
             int ret = clearentVp3300.emv_setApplicationData(mobileContactAid.getName(), values, resData);
-            //TODO communicate errors
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
-                    System.out.println("EMV create AID " + mobileContactAid.getName() + " Succeeded\n");
+                    Log.i("INFO","EMV Contact Aid " + mobileContactAid.getName() + " Added ");
                 } else {
-                    String info = "EMV create AID " + mobileContactAid.getName() + " Failed\n";
-                    info += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
-                    System.out.println(info);
+                    String error = "EMV create AID " + mobileContactAid.getName() + " Failed. ";
+                    error += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
+                    notifyFailure(error);
                 }
             } else {
-                String info = "EMV create AID " + mobileContactAid.getName() + " Failed\n";
-                info += "Status: " + clearentVp3300.device_getResponseCodeString(ret) + "";
-                System.out.println(info);
+                String error = "EMV create AID " + mobileContactAid.getName() + " Failed. ";
+                error += "Status: " + clearentVp3300.device_getResponseCodeString(ret) + "";
+                notifyFailure(error);
             }
         }
     }
@@ -107,5 +110,11 @@ public class ClearentConfigFetcherResponseHandler {
             stringBuilder.append(tag + length + value);
         }
         return stringBuilder.toString();
+    }
+
+    public void notifyFailure(String message) {
+        Log.e("ERROR", message);
+        clearentConfigurator.notifyFailure("VIVOpay failed to retrieve configuration");
+        clearentConfigurator.notifyFailure(message);
     }
 }
