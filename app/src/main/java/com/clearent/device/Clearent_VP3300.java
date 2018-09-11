@@ -1,28 +1,35 @@
 package com.clearent.device;
 
 import android.content.Context;
+import android.util.Log;
+
+import com.clearent.device.token.domain.TransactionToken;
 import com.idtechproducts.device.*;
 import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
-public class Clearent_VP3300 {
+public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAware {
 
     private static IDT_VP3300 idt_VP3300;
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
     private PublicOnReceiverListener publicOnReceiverListener;
     private ClearentOnReceiverListener clearentOnReceiverListener;
+    private boolean configured = false;
+    private byte[] tag8A = new byte[]{0x30, 0x30};
 
-    public Clearent_VP3300(PublicOnReceiverListener callback, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
-        ClearentOnReceiverListener clearentOnReceiverListener = new ClearentOnReceiverListener(this, callback);
+    public Clearent_VP3300(PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
+        this.publicOnReceiverListener = publicOnReceiverListener;
+        clearentOnReceiverListener = new ClearentOnReceiverListener(this, publicOnReceiverListener);
         idt_VP3300 = new IDT_VP3300(clearentOnReceiverListener, context);
         this.paymentsBaseUrl = paymentsBaseUrl;
         this.paymentsPublicKey = paymentsPublicKey;
     }
 
-    public Clearent_VP3300(PublicOnReceiverListener callback, OnReceiverListenerPINRequest callback2, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
-        ClearentOnReceiverListener clearentOnReceiverListener = new ClearentOnReceiverListener(this, callback);
+    public Clearent_VP3300(PublicOnReceiverListener publicOnReceiverListener, OnReceiverListenerPINRequest callback2, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
+        this.publicOnReceiverListener = publicOnReceiverListener;
+        clearentOnReceiverListener = new ClearentOnReceiverListener(this, publicOnReceiverListener);
         idt_VP3300 = new IDT_VP3300(clearentOnReceiverListener, callback2, context);
         this.paymentsBaseUrl = paymentsBaseUrl;
         this.paymentsPublicKey = paymentsPublicKey;
@@ -489,5 +496,81 @@ public class Clearent_VP3300 {
     public void setClearentOnReceiverListener(ClearentOnReceiverListener clearentOnReceiverListener) {
         this.clearentOnReceiverListener = clearentOnReceiverListener;
     }
+
+    public void notifyFailure(String message) {
+        String[] messageArray = {message};
+        clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
+    }
+
+    public void notifyTransactionTokenFailure(String message) {
+        String[] messageArray = {message};
+        clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
+    }
+
+    public void notifyNewTransactionToken(TransactionToken transactionToken) {
+        publicOnReceiverListener.successfulTransactionToken(transactionToken);
+        completeEmvTransaction();
+    }
+
+    public void completeEmvTransaction() {
+        byte[] authResponseCode = null;
+        byte[] issuerAuthData = null;
+        byte[] tlvScripts = null;
+        byte[] value = null;
+        int rt =  idt_VP3300.getSDKInstance().emv_completeTransaction(false, authResponseCode, issuerAuthData, tlvScripts, value);
+        if(rt == ErrorCode.SUCCESS) {
+            Log.i("INFO", "Completed the emv transaction");
+        } else {
+            Log.i("WARN", "Emv transaction failed to complete");
+        }
+    }
+
+    public void notifyReaderIsReady() {
+        String[] message = {"VIVOpay configured and ready"};
+        clearentOnReceiverListener.lcdDisplay(0, message, 0);
+    }
+
+    public String getDeviceSerialNumber() {
+        StringBuilder stringBuilderSerialNumber = new StringBuilder();
+        int serialNumberRt = config_getSerialNumber(stringBuilderSerialNumber);
+        if (serialNumberRt == ErrorCode.SUCCESS) {
+            String info = "Serial Number: " + stringBuilderSerialNumber.toString();
+            System.out.println("serial number is " + info);
+        } else {
+            String info = "GetSerialNumber: Failed\n";
+            info += "Status: " + device_getResponseCodeString(serialNumberRt) + "";
+            System.out.println(info);
+            String[] message = {info};
+            clearentOnReceiverListener.lcdDisplay(0, message, 0);
+        }
+        return stringBuilderSerialNumber.toString();
+    }
+
+    public String getKernelVersion() {
+        StringBuilder stringBuilderKernelVersion = new StringBuilder();
+        int kernelVersionRt = emv_getEMVKernelVersion(stringBuilderKernelVersion);
+        if (kernelVersionRt == ErrorCode.SUCCESS) {
+            String info = "Kernel Version: " + stringBuilderKernelVersion.toString();
+            System.out.println("kernel version is " + info);
+        } else {
+            String info = "Kernel version: Failed\n";
+            info += "Status: " + device_getResponseCodeString(kernelVersionRt) + "";
+            System.out.println(info);
+            String[] message = {info};
+            clearentOnReceiverListener.lcdDisplay(0, message, 0);
+        }
+        stringBuilderKernelVersion.insert(0, "EM");
+        return stringBuilderKernelVersion.toString();
+    }
+
+    public String getFirmwareVersion() {
+        StringBuilder firmwareVersionSb = new StringBuilder();
+        int firmwareVersionRt = device_getFirmwareVersion(firmwareVersionSb);
+        if(firmwareVersionRt == ErrorCode.SUCCESS) {
+            return firmwareVersionSb.toString();
+        }
+        return "IDTech Firmware Version Unknown";
+    }
+
 }
 

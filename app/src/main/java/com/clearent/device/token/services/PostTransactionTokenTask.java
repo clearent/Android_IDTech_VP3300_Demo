@@ -1,57 +1,71 @@
-package com.clearent.device.config;
+package com.clearent.device.token.services;
 
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
 import com.clearent.device.config.domain.ConfigFetchRequest;
-import com.idtechproducts.device.audiojack.UMLog;
-import com.idtechproducts.device.audiojack.config.UmXmlParser;
+import com.clearent.device.token.domain.ClearentTransactionTokenRequest;
+import com.google.gson.Gson;
 
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
-public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
+public class PostTransactionTokenTask extends AsyncTask<Void, Void, String> {
 
     public interface AsyncResponse {
         void processFinish(String output);
     }
 
-    private static final String RELATIVE_PATH = "/rest/v2/mobile/devices";
+    private static final String RELATIVE_PATH = "/rest/v2/mobilejwt";
 
+    private ClearentTransactionTokenRequest clearentTransactionTokenRequest;
     private ConfigFetchRequest configFetchRequest;
 
     public AsyncResponse delegate = null;
 
-    public GetConfigurationTask(ConfigFetchRequest configFetchRequest, AsyncResponse delegate) {
+    public PostTransactionTokenTask(ConfigFetchRequest configFetchRequest, ClearentTransactionTokenRequest clearentTransactionTokenRequest, AsyncResponse delegate) {
         this.configFetchRequest = configFetchRequest;
+        this.clearentTransactionTokenRequest = clearentTransactionTokenRequest;
         this.delegate = delegate;
     }
 
     @Override
     protected String doInBackground(Void... voids) {
         try {
-            String encodedKernelVersion = Uri.encode(configFetchRequest.getKernelVersion());
-            URL url = new URL(configFetchRequest.getBaseUrl() + RELATIVE_PATH + "/" + configFetchRequest.getDeviceSerialNumber() + "/" + encodedKernelVersion);
+            URL url = new URL(configFetchRequest.getBaseUrl() + RELATIVE_PATH);
+
             HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
+
+            urlConnection.setDoInput(true);
+            urlConnection.setDoOutput(true);
+            urlConnection.setRequestProperty("Content-Type", "application/json");
+            urlConnection.setRequestMethod("POST");
             urlConnection.setRequestProperty("public-key", configFetchRequest.getPublicKey());
             urlConnection.setRequestProperty("Accept", "application/json");
+
+            //TODO exceptions ?
+            // Send the post body
+            try {
+                if (clearentTransactionTokenRequest != null) {
+                    OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
+                    Gson gson = new Gson();
+                    String json = gson.toJson(clearentTransactionTokenRequest);
+                    writer.write(json);
+                    writer.flush();
+                }
+            } catch(Exception e) {
+                //TODO notify failure,
+                return "";
+            }
+
             try {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
                 StringBuilder stringBuilder = new StringBuilder();
@@ -61,9 +75,6 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
                 }
                 bufferedReader.close();
                 return stringBuilder.toString();
-                ////had problems at home calling qa. so I used postman to get the json and worked with it locally
-                //TODO Consider a fallback similar to android device fallback ? or do we assert "If the internet is up our services are too ?"
-                //return loadJSON();
             } catch (Exception e) {
                 Log.e("ERROR", e.getMessage(), e);
                 return null;
@@ -83,23 +94,5 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
         }
         Log.i("INFO", response);
         delegate.processFinish(response);
-    }
-
-    public String loadJSON() {
-        String json = null;
-        try {
-            String file = "res/raw/testconfig.json";
-            InputStream in = this.getClass().getClassLoader().getResourceAsStream(file);
-            int size = in.available();
-            byte[] buffer = new byte[size];
-            in.read(buffer);
-            in.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
-
     }
 }

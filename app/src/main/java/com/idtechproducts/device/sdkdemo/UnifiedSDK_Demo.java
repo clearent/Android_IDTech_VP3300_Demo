@@ -13,6 +13,7 @@ import java.util.Set;
 
 import com.clearent.device.Clearent_VP3300;
 import com.clearent.device.PublicOnReceiverListener;
+import com.clearent.device.token.domain.TransactionToken;
 import com.dbconnection.dblibrarybeta.ProfileManager;
 import com.dbconnection.dblibrarybeta.ProfileUtility;
 import com.idtechproducts.device.Common;
@@ -237,20 +238,29 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         @Override
-        public void successfulTransactionToken(String transactionToken) {
+        public void successfulTransactionToken(final TransactionToken transactionToken) {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
+                    info = "Successful transaction token found " + transactionToken.getTransactionToken();
                     handler.post(doUpdateStatus);
-                    dlgCompleteEMV = new Dialog(getActivity());
-                    dlgCompleteEMV.setTitle("Successful transaction token found");
-                    dlgCompleteEMV.setCancelable(false);
-                    dlgCompleteEMV.setContentView(R.layout.complete_emv_one_option_dialog);
-                    Button btnCompleteEMV = (Button) dlgCompleteEMV.findViewById(R.id.btnCompleteEMV);
-                    btnCompleteEMV.setOnClickListener(onlineApprovedOnClick);
-                    Button btnCompCancel = (Button) dlgCompleteEMV.findViewById(R.id.btnCompEMVOneCancel);
-                    btnCompCancel.setOnClickListener(authCompCancelOnClick);
-                    dialogId = 1;
-                    dlgCompleteEMV.show();
+
+                    if (alertSwipe != null && alertSwipe.isShowing()) {
+                        alertSwipe.dismiss();
+                    }
+
+                    swipeButton.setEnabled(true);
+                    commandBtn.setEnabled(true);
+
+//                    dlgCompleteEMV = new Dialog(getActivity());
+//                    dlgCompleteEMV.setTitle("Successful transaction token found " + transactionToken.getTransactionToken());
+//                    dlgCompleteEMV.setCancelable(false);
+//                    dlgCompleteEMV.setContentView(R.layout.complete_emv_one_option_dialog);
+//                    Button btnCompleteEMV = (Button) dlgCompleteEMV.findViewById(R.id.btnCompleteEMV);
+//                    btnCompleteEMV.setOnClickListener(onlineApprovedOnClick);
+//                    Button btnCompCancel = (Button) dlgCompleteEMV.findViewById(R.id.btnCompEMVOneCancel);
+//                    btnCompCancel.setOnClickListener(authCompCancelOnClick);
+//                    dialogId = 1;
+//                    dlgCompleteEMV.show();
                 }
             });
         }
@@ -259,7 +269,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             if (device != null) {
                 releaseSDK();
             }
-            device = new Clearent_VP3300(this, this, getActivity(), "https://mobile-devices-qa.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf");
+            device = new Clearent_VP3300(this, this, getActivity(), "https://gateway-qa.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf");
             profileManager.doGet();
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
             device.log_setVerboseLoggingEnable(true);
@@ -636,7 +646,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         public void lcdDisplay(int mode, String[] lines, int timeout) {
             info = lines[0];
             handler.post(doUpdateStatus);
-//TODO send messages here. mode 0 ? timeout 0 ?
         }
 
         public void lcdDisplay(int mode, String[] lines, int timeout, byte[] languageCode, byte messageId) {
@@ -1273,6 +1282,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 tag8A = Common.getBytesFromHexString(edt8A.getText().toString());
 
                 byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
+
+                //TODO interesting fallback flag ..test it !!!
                 Clearent_VP3300.emv_allowFallback(true);
                 if (Clearent_VP3300.emv_getAutoAuthenticateTransaction())
                     return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, tags, false);

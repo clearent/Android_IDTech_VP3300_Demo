@@ -1,11 +1,11 @@
 package com.clearent.device;
 
+import com.clearent.device.token.domain.TransactionToken;
 import com.idtechproducts.device.StructConfigParameters;
 
 public interface PublicOnReceiverListener {
 
-    //give them a payment token back
-    void successfulTransactionToken(String transactionToken);
+    void successfulTransactionToken(TransactionToken transactionToken);
 
     //Just like our iOS wrapping strategy we don't expose this method.
     //void swipeMSRData(IDTMSRData var1);
