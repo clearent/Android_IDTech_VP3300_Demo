@@ -11,9 +11,6 @@ import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ResDataStruct;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,11 +18,9 @@ import java.util.Map;
 public class ClearentConfigFetcherResponseHandler {
 
     private Clearent_VP3300 clearentVp3300;
-    private ClearentConfigurator clearentConfigurator;
 
-    public ClearentConfigFetcherResponseHandler(Clearent_VP3300 clearentVp3300, ClearentConfigurator clearentConfigurator) {
+    public ClearentConfigFetcherResponseHandler(Clearent_VP3300 clearentVp3300) {
         this.clearentVp3300 = clearentVp3300;
-        this.clearentConfigurator = clearentConfigurator;
     }
 
     public void handleResponse(String json) {
@@ -34,7 +29,7 @@ public class ClearentConfigFetcherResponseHandler {
             ConfigurationResponse configurationResponse = gson.fromJson(json, ConfigurationResponse.class);
             configureAids(configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids());
             configureCaPublicKeys(configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys());
-            clearentConfigurator.notifyReady();
+            clearentVp3300.notifyReaderIsReady();
         } catch (Exception e) {
             clearentVp3300.notifyFailure("VIVOpay failed to retrieve configuration");
         }

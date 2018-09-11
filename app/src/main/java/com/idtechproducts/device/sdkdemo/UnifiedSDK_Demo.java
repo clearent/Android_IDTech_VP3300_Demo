@@ -243,24 +243,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 public void run() {
                     info = "Successful transaction token found " + transactionToken.getTransactionToken();
                     handler.post(doUpdateStatus);
-
                     if (alertSwipe != null && alertSwipe.isShowing()) {
                         alertSwipe.dismiss();
                     }
-
                     swipeButton.setEnabled(true);
                     commandBtn.setEnabled(true);
-
-//                    dlgCompleteEMV = new Dialog(getActivity());
-//                    dlgCompleteEMV.setTitle("Successful transaction token found " + transactionToken.getTransactionToken());
-//                    dlgCompleteEMV.setCancelable(false);
-//                    dlgCompleteEMV.setContentView(R.layout.complete_emv_one_option_dialog);
-//                    Button btnCompleteEMV = (Button) dlgCompleteEMV.findViewById(R.id.btnCompleteEMV);
-//                    btnCompleteEMV.setOnClickListener(onlineApprovedOnClick);
-//                    Button btnCompCancel = (Button) dlgCompleteEMV.findViewById(R.id.btnCompEMVOneCancel);
-//                    btnCompCancel.setOnClickListener(authCompCancelOnClick);
-//                    dialogId = 1;
-//                    dlgCompleteEMV.show();
                 }
             });
         }

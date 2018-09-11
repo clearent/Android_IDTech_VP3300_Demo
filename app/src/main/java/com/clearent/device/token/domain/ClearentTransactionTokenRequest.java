@@ -8,7 +8,7 @@ public class ClearentTransactionTokenRequest {
     @SerializedName("tlv")
     private String tlv;
 
-    @SerializedName("encrypted")
+    @SerializedName("tlv-encrypted")
     private boolean encrypted;
 
     @SerializedName("emv")

@@ -1,6 +1,5 @@
 package com.clearent.device.token.services;
 
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 

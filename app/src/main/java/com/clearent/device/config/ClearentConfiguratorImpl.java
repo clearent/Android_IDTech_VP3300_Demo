@@ -15,7 +15,6 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
     private static final String RELATIVE_URL = "rest/v2/mobile/devices";
 
-    private boolean configured = false;
     private Clearent_VP3300 clearentVp3300;
     private ClearentOnReceiverListener clearentOnReceiverListener;
 
@@ -26,33 +25,33 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
     @Override
     public void configure() {
-        if (configured) {
-            String[] message = {"VIVOpay configured and ready"};
-            clearentOnReceiverListener.lcdDisplay(0, message, 0);
-            return;
-        }
-
         setTerminalMajorConfiguration();
-
         initClock();
+        configureReader();
+    }
 
-        String kernelVersion = clearentVp3300.getKernelVersion();
-        String deviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
-        ConfigFetchRequest configFetchRequest = new ConfigFetchRequest(clearentVp3300.getPaymentsBaseUrl(), clearentVp3300.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
-        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentVp3300, this);
+    private void configureReader() {
+        ConfigFetchRequest configFetchRequest = createConfigFetchRequest();
+        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(clearentVp3300);
         ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(configFetchRequest);
         clearentConfigFetcher.fetchConfiguration(clearentConfigFetcherResponseHandler);
     }
 
+    private ConfigFetchRequest createConfigFetchRequest() {
+        String kernelVersion = clearentVp3300.getKernelVersion();
+        String deviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
+        ConfigFetchRequest configFetchRequest = new ConfigFetchRequest(clearentVp3300.getPaymentsBaseUrl(), clearentVp3300.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
+        return configFetchRequest;
+
+    }
     private void setTerminalMajorConfiguration() {
         ResDataStruct resDataStruct = new ResDataStruct();
         int commandRt = clearentVp3300.device_sendDataCommand("6016", false, "05", resDataStruct);
         if (commandRt == ErrorCode.SUCCESS) {
             String info = "Terminal Major Configuration Succeeded ";
-            String[] message = {info};
-            clearentOnReceiverListener.lcdDisplay(0, message, 0);
+            Log.i("INFO", info);
         } else {
-            String info = "Terminal Major Configuration Failed. ";
+            String info = "Reader failed to configure (terminal major). ";
             info += "Status: " + clearentVp3300.device_getResponseCodeString(commandRt) + "";
             String[] message = {info};
             clearentOnReceiverListener.lcdDisplay(0, message, 0);
@@ -93,16 +92,4 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
         String time = simpleDateFormat.format(new Date());
         return time;
     }
-
-    @Override
-    public boolean isConfigured() {
-        return configured;
-    }
-
-    @Override
-    public void notifyReady() {
-        this.configured = true;
-        clearentVp3300.notifyReaderIsReady();
-    }
-
 }

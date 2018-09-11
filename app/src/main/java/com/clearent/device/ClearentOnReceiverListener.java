@@ -125,41 +125,48 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             return;
         }
 
-//
-//        if (emvData.resultCodeV2 == EMV_RESULT_CODE_V2_DECLINED_OFFLINE) {
-//        [self deviceMessage:CARD_OFFLINE_DECLINED];
-//            return;
-//        }
-//
-//        if (emvData.resultCodeV2 == EMV_RESULT_CODE_V2_MSR_CARD_ERROR) {
-//        [self deviceMessage:GENERIC_CARD_READ_ERROR_RESPONSE];
-//            return;
-//        }
-//
-//        if(emvData.resultCodeV2 == EMV_RESULT_CODE_V2_APP_NO_MATCHING) {
-//        [self deviceMessage:@"FALLBACK TO SWIPE"];
+        if (idtemvData.result == IDTEMVData.TIME_OUT) {
+            String[] message = {"TIMEOUT"};
+            lcdDisplay(0,message,0);
+        }
+
+
+        if (idtemvData.result == IDTEMVData.DECLINED_OFFLINE) {
+            String[] message = {"DECLINED OFFLINE"};
+            lcdDisplay(0,message,0);
+            return;
+        }
+
+        if (idtemvData.result == IDTEMVData.MSR_CARD_ERROR) {
+            String[] message = {"INVALID SWIPE"};
+            lcdDisplay(0,message,0);
+            return;
+        }
+
+        if(idtemvData.result == IDTEMVData.APP_NO_MATCHING) {
+            String[] message = {"FALLBACK TO SWIPE"};
+            lcdDisplay(0,message,0);
+            //TODO Do we need to do this ? Look at the flag in the demo class
 //            SEL startFallbackSwipeSelector = @selector(startFallbackSwipe);
 //        [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:startFallbackSwipeSelector userInfo:nil repeats:false];
-//            return;
-//        }
-//
-//        if (emvData.resultCodeV2 == EMV_RESULT_CODE_V2_TIME_OUT) {
-//        [self deviceMessage:TIMEOUT_ERROR_RESPONSE];
-//            return;
-//        }
-//
-//        //The mobile-jwt call should succeed or fail. We call the IDTech complete method every time.
-//        if (emvData.resultCodeV2 == EMV_RESULT_CODE_V2_APPROVED || emvData.resultCodeV2 == EMV_RESULT_CODE_V2_APPROVED_OFFLINE ) {
-//            return;
-//        }
-//        //We aren't starting an authorization so this result code should never be set. But return just in case.
-//        if (emvData.resultCodeV2 == EMV_RESULT_CODE_V2_START_TRANS_SUCCESS) {
-//            return;
-//        }
-//
-//        if (emvData.cardType == 1) {
-//            NSLog(@"CONTACTLESS");
-//        }
+            return;
+        }
+
+        //The mobile-jwt call should succeed or fail. We call the IDTech complete method every time.
+        if (idtemvData.result == IDTEMVData.APPROVED || idtemvData.result == IDTEMVData.APPROVED_OFFLINE ) {
+            return;
+        }
+
+        //We aren't starting an authorization so this result code should never be set. But return just in case.
+        if (idtemvData.result == IDTEMVData.START_TRANS_SUCCESS) {
+            return;
+        }
+
+        if (idtemvData.cardType == 1) {
+            String[] message = {"CONTACTLESS NOT SUPPORTED"};
+            lcdDisplay(0,message,0);
+            return;
+        }
 //
 //
 //        int FALLBACK_SWIPE=80, NONTECH_FALLBACK_SWIPE=95, CONTACTLESS_EMV=07, CONTACTLESS_MAGNETIC_SWIPE=91;
@@ -205,8 +212,21 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         String[] message = {"VIVOpay connected. Waiting for configuration to complete..."};
         publicOnReceiverListener.lcdDisplay(0,message,0);
 
-        if(!clearentConfigurator.isConfigured()) {
+        //Grab this information only after connecting to avoid any 'busy' signals with the reader.
+        String previousDeviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
+        clearentVp3300.setDeviceSerialNumber();
+        clearentVp3300.setFirmwareVersion();
+        clearentVp3300.setKernelVersion();
+
+        if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(clearentVp3300.getDeviceSerialNumber())) {
+            clearentVp3300.setConfigured(false);
+        }
+
+        if(!clearentVp3300.isConfigured()) {
             clearentConfigurator.configure();
+        } else {
+            String[] readyMessage = {"VIVOpay configured and ready"};
+            publicOnReceiverListener.lcdDisplay(0, readyMessage, 0);
         }
     }
 
@@ -350,7 +370,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
                      }
                      removeInvalidTSYSTags(unencryptedTags);
                      addRequiredTags(unencryptedTags);
-                     tlvInHex =convertToTlv(unencryptedTags);
+                     tlvInHex = convertToTlv(unencryptedTags);
                  }
 
                  clearentTransactionTokenRequest.setTlv(tlvInHex.toUpperCase());
@@ -371,13 +391,16 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
        return clearentTransactionTokenRequest;
     }
 
+
     public String convertToTlv(Map<String, byte[]> values) {
         StringBuilder stringBuilder = new StringBuilder();
         for(Map.Entry<String, byte[]> entry: values.entrySet()) {
             String tag = entry.getKey();
-            String length = Integer.toHexString(tag.length());
             byte[] value = entry.getValue();
-            stringBuilder.append(tag+length+Common.byteToString(value));
+            String hexString = Common.getHexStringFromBytes(value);
+            int valueLength = hexString.length()/2;
+            String length = String.format("%02X", valueLength);
+            stringBuilder.append(tag + length + Common.getHexStringFromBytes(value));
         }
         return stringBuilder.toString();
     }

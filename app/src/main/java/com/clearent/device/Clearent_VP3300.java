@@ -14,6 +14,10 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
     private static IDT_VP3300 idt_VP3300;
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
+    private String deviceSerialNumber;
+    private String kernelVersion;
+    private String firmareVersion;
+
     private PublicOnReceiverListener publicOnReceiverListener;
     private ClearentOnReceiverListener clearentOnReceiverListener;
     private boolean configured = false;
@@ -481,14 +485,6 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         this.paymentsPublicKey = paymentsPublicKey;
     }
 
-    public PublicOnReceiverListener getPublicOnReceiverListener() {
-        return publicOnReceiverListener;
-    }
-
-    public void setPublicOnReceiverListener(PublicOnReceiverListener publicOnReceiverListener) {
-        this.publicOnReceiverListener = publicOnReceiverListener;
-    }
-
     public ClearentOnReceiverListener getClearentOnReceiverListener() {
         return clearentOnReceiverListener;
     }
@@ -526,51 +522,71 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
     }
 
     public void notifyReaderIsReady() {
+        configured = true;
         String[] message = {"VIVOpay configured and ready"};
         clearentOnReceiverListener.lcdDisplay(0, message, 0);
     }
 
-    public String getDeviceSerialNumber() {
+    public void setDeviceSerialNumber() {
         StringBuilder stringBuilderSerialNumber = new StringBuilder();
         int serialNumberRt = config_getSerialNumber(stringBuilderSerialNumber);
         if (serialNumberRt == ErrorCode.SUCCESS) {
-            String info = "Serial Number: " + stringBuilderSerialNumber.toString();
-            System.out.println("serial number is " + info);
+            String newDeviceSerialNumber = stringBuilderSerialNumber.toString();
+            deviceSerialNumber = newDeviceSerialNumber;
         } else {
             String info = "GetSerialNumber: Failed\n";
             info += "Status: " + device_getResponseCodeString(serialNumberRt) + "";
             System.out.println(info);
             String[] message = {info};
             clearentOnReceiverListener.lcdDisplay(0, message, 0);
+            deviceSerialNumber = "unknown";
         }
-        return stringBuilderSerialNumber.toString();
     }
 
-    public String getKernelVersion() {
+    public void setKernelVersion() {
         StringBuilder stringBuilderKernelVersion = new StringBuilder();
         int kernelVersionRt = emv_getEMVKernelVersion(stringBuilderKernelVersion);
         if (kernelVersionRt == ErrorCode.SUCCESS) {
-            String info = "Kernel Version: " + stringBuilderKernelVersion.toString();
-            System.out.println("kernel version is " + info);
+            stringBuilderKernelVersion.insert(0, "EM");
+            kernelVersion = stringBuilderKernelVersion.toString();
         } else {
             String info = "Kernel version: Failed\n";
             info += "Status: " + device_getResponseCodeString(kernelVersionRt) + "";
             System.out.println(info);
             String[] message = {info};
             clearentOnReceiverListener.lcdDisplay(0, message, 0);
+            kernelVersion = "unknown";
         }
-        stringBuilderKernelVersion.insert(0, "EM");
-        return stringBuilderKernelVersion.toString();
     }
 
-    public String getFirmwareVersion() {
+    public void setFirmwareVersion() {
         StringBuilder firmwareVersionSb = new StringBuilder();
         int firmwareVersionRt = device_getFirmwareVersion(firmwareVersionSb);
         if(firmwareVersionRt == ErrorCode.SUCCESS) {
-            return firmwareVersionSb.toString();
+            firmareVersion= firmwareVersionSb.toString();
+        } else {
+            firmareVersion = "unknown";
         }
-        return "IDTech Firmware Version Unknown";
     }
 
+    public String getDeviceSerialNumber() {
+        return deviceSerialNumber;
+    }
+
+    public String getKernelVersion() {
+        return kernelVersion;
+    }
+
+    public String getFirmwareVersion() {
+        return firmareVersion;
+    }
+
+    public boolean isConfigured() {
+        return configured;
+    }
+
+    public void setConfigured(boolean configured) {
+        this.configured = configured;
+    }
 }
 
