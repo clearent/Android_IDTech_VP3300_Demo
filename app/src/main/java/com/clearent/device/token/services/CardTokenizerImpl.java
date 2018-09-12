@@ -37,7 +37,7 @@ public class CardTokenizerImpl implements CardTokenizer {
 
     @Override
     public void createTransactionTokenForFallback(IDTMSRData cardData) {
-        ClearentTransactionTokenRequest clearentTransactionTokenRequest =createClearentTransactionTokenRequestForFallbackSwipe(cardData);
+        ClearentTransactionTokenRequest clearentTransactionTokenRequest = createClearentTransactionTokenRequestForFallbackSwipe(cardData);
         createTransactionToken(clearentTransactionTokenRequest);
     }
 

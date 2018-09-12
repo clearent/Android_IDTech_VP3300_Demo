@@ -23,6 +23,7 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
     private PublicOnReceiverListener publicOnReceiverListener;
     private ClearentOnReceiverListener clearentOnReceiverListener;
     private boolean configured = false;
+    private boolean previousDipDidNotMatchOnApp = false;
 
     public Clearent_VP3300(PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
         this.publicOnReceiverListener = publicOnReceiverListener;
@@ -343,6 +344,7 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
     }
 
     public int emv_startTransaction(double amount, double amtOther, int type, int timeout, byte[] tags, boolean forceOnline) {
+        previousDipDidNotMatchOnApp = false;
         return idt_VP3300.getSDKInstance().emv_startTransaction(amount, amtOther, type, timeout, tags, forceOnline);
     }
 
@@ -631,6 +633,14 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
 
     public void setConfigured(boolean configured) {
         this.configured = configured;
+    }
+
+    public boolean isPreviousDipDidNotMatchOnApp() {
+        return previousDipDidNotMatchOnApp;
+    }
+
+    public void setPreviousDipDidNotMatchOnApp(boolean previousDipDidNotMatchOnApp) {
+        this.previousDipDidNotMatchOnApp = previousDipDidNotMatchOnApp;
     }
 }
 

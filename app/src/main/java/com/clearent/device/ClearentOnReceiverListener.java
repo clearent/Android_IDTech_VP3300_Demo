@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.idtechproducts.device.ReaderInfo.EVENT_MSR_Types.EVENT_MSR_CARD_DATA;
-// clearent_vp3300 needs an interface
+//TODO clearent_vp3300 needs an interface
 public class ClearentOnReceiverListener implements OnReceiverListener {
 
     private Clearent_VP3300 clearentVp3300;
@@ -32,13 +32,19 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     @Override
     public void swipeMSRData(IDTMSRData idtmsrData) {
 
-        //Common.parse_MSRData(device.device_getDeviceType(), msr_card);
         if (idtmsrData == null || idtmsrData.result != ErrorCode.SUCCESS || idtmsrData.event != EVENT_MSR_CARD_DATA || (idtmsrData.track2 == null && idtmsrData.encTrack2 == null)) {
             clearentVp3300.notifyFailure("Invalid Swipe");
             return;
         }
+
         CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
-        cardTokenizer.createTransactionToken(idtmsrData);
+
+        if(clearentVp3300.isPreviousDipDidNotMatchOnApp()) {
+            clearentVp3300.setPreviousDipDidNotMatchOnApp(false);
+            cardTokenizer.createTransactionTokenForFallback(idtmsrData);
+        } else {
+            cardTokenizer.createTransactionToken(idtmsrData);
+        }
     }
 
     @Override
@@ -114,8 +120,11 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         }
 
         if(idtemvData.result == IDTEMVData.APP_NO_MATCHING) {
+            clearentVp3300.setPreviousDipDidNotMatchOnApp(true);
             notify("FALLBACK TO SWIPE");
             //TODO Do we need to do this ? Look at the flag in the demo class
+            //TODO do we need a delay????
+            clearentVp3300.msr_startMSRSwipe();
 //            SEL startFallbackSwipeSelector = @selector(startFallbackSwipe);
 //        [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:startFallbackSwipeSelector userInfo:nil repeats:false];
             return;
