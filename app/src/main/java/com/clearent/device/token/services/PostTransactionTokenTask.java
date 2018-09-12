@@ -3,7 +3,7 @@ package com.clearent.device.token.services;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.clearent.device.config.domain.ConfigFetchRequest;
+import com.clearent.device.domain.CommunicationRequest;
 import com.clearent.device.token.domain.ClearentTransactionTokenRequest;
 import com.google.gson.Gson;
 
@@ -26,12 +26,12 @@ public class PostTransactionTokenTask extends AsyncTask<Void, Void, String> {
     private static final String RELATIVE_PATH = "/rest/v2/mobilejwt";
 
     private ClearentTransactionTokenRequest clearentTransactionTokenRequest;
-    private ConfigFetchRequest configFetchRequest;
+    private CommunicationRequest communicationRequest;
 
     public AsyncResponse delegate = null;
 
-    public PostTransactionTokenTask(ConfigFetchRequest configFetchRequest, ClearentTransactionTokenRequest clearentTransactionTokenRequest, AsyncResponse delegate) {
-        this.configFetchRequest = configFetchRequest;
+    public PostTransactionTokenTask(CommunicationRequest communicationRequest, ClearentTransactionTokenRequest clearentTransactionTokenRequest, AsyncResponse delegate) {
+        this.communicationRequest = communicationRequest;
         this.clearentTransactionTokenRequest = clearentTransactionTokenRequest;
         this.delegate = delegate;
     }
@@ -39,7 +39,7 @@ public class PostTransactionTokenTask extends AsyncTask<Void, Void, String> {
     @Override
     protected String doInBackground(Void... voids) {
         try {
-            URL url = new URL(configFetchRequest.getBaseUrl() + RELATIVE_PATH);
+            URL url = new URL(communicationRequest.getBaseUrl() + RELATIVE_PATH);
 
             HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
 
@@ -47,7 +47,7 @@ public class PostTransactionTokenTask extends AsyncTask<Void, Void, String> {
             urlConnection.setDoOutput(true);
             urlConnection.setRequestProperty("Content-Type", "application/json");
             urlConnection.setRequestMethod("POST");
-            urlConnection.setRequestProperty("public-key", configFetchRequest.getPublicKey());
+            urlConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
             urlConnection.setRequestProperty("Accept", "application/json");
 
             //TODO exceptions ?

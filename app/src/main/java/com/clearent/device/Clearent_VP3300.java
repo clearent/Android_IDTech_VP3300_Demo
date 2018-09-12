@@ -9,9 +9,11 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
-public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAware {
+public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAware, DeviceConfigurable, HasDeviceMetadata, Tokenizable {
 
     private static IDT_VP3300 idt_VP3300;
+    private byte[] tag8A = new byte[]{0x30, 0x30};
+
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
     private String deviceSerialNumber;
@@ -21,7 +23,6 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
     private PublicOnReceiverListener publicOnReceiverListener;
     private ClearentOnReceiverListener clearentOnReceiverListener;
     private boolean configured = false;
-    private byte[] tag8A = new byte[]{0x30, 0x30};
 
     public Clearent_VP3300(PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
         this.publicOnReceiverListener = publicOnReceiverListener;
@@ -498,18 +499,34 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
     }
 
+    @Override
     public void notifyTransactionTokenFailure(String message) {
         String[] messageArray = {message};
         clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
+        completeEmvTransaction();
     }
+
+    @Override
+    public void notifyTransactionTokenFailure(int returnCode, String message) {
+        String errorMessage = message;
+        errorMessage += " Status: " + device_getResponseCodeString(returnCode) + "";
+        String[] messageArray = {errorMessage};
+        clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
+        Log.e("ERROR",message);
+        completeEmvTransaction();
+    }
+
 
     public void notifyNewTransactionToken(TransactionToken transactionToken) {
         publicOnReceiverListener.successfulTransactionToken(transactionToken);
         completeEmvTransaction();
     }
 
-    public void completeEmvTransaction() {
-        byte[] authResponseCode = null;
+    /*
+     * The goal of this method is to
+     */
+    void completeEmvTransaction() {
+        byte[] authResponseCode = new byte[2];
         byte[] issuerAuthData = null;
         byte[] tlvScripts = null;
         byte[] value = null;
@@ -517,7 +534,9 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         if(rt == ErrorCode.SUCCESS) {
             Log.i("INFO", "Completed the emv transaction");
         } else {
-            Log.i("WARN", "Emv transaction failed to complete");
+            String warn = "Emv transaction failed to complete. \n";
+            warn += "Status: " + device_getResponseCodeString(rt) + "";
+            Log.i("WARN", warn);
         }
     }
 
@@ -567,6 +586,31 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         } else {
             firmareVersion = "unknown";
         }
+    }
+
+    @Override
+    public void notifyCommandFailure(int returnCode, String message) {
+        String errorMessage = message;
+        errorMessage += "Status: " + device_getResponseCodeString(returnCode) + "";
+        String[] messageArray = {errorMessage};
+        clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
+        Log.e("ERROR",message);
+    }
+
+    @Override
+    public void notifyConfigurationFailure(String message) {
+        String[] messageArray = {message};
+        clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
+        Log.e("ERROR",message);
+    }
+
+    @Override
+    public void notifyConfigurationFailure(int returnCode, String message) {
+        String errorMessage = message;
+        errorMessage += " Status: " + device_getResponseCodeString(returnCode) + "";
+        String[] messageArray = {errorMessage};
+        clearentOnReceiverListener.lcdDisplay(0, messageArray, 0);
+        Log.e("ERROR",message);
     }
 
     public String getDeviceSerialNumber() {

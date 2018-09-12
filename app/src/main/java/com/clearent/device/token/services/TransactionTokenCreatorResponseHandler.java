@@ -17,6 +17,10 @@ public class TransactionTokenCreatorResponseHandler {
     }
 
     public void handleResponse(String json) {
+        if(json == null) {
+            transactionTokenNotifier.notifyTransactionTokenFailure(GENERIC_TRANSACTION_TOKEN_ERROR_RESPONSE);
+            return;
+        }
         Gson gson = new Gson();
         try {
             MobileJwtResponse mobileJwtResponse = gson.fromJson(json, MobileJwtResponse.class);

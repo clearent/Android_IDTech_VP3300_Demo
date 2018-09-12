@@ -1,45 +1,32 @@
 package com.clearent.device;
 
 
+import android.util.Log;
+
 import com.clearent.device.config.ClearentConfigurator;
 import com.clearent.device.config.ClearentConfiguratorImpl;
-import com.clearent.device.config.domain.ConfigFetchRequest;
-import com.clearent.device.token.domain.ClearentTransactionTokenRequest;
-import com.clearent.device.token.services.TransactionTokenCreator;
-import com.clearent.device.token.services.TransactionTokenCreatorImpl;
-import com.clearent.device.token.services.TransactionTokenCreatorResponseHandler;
-import com.idtechproducts.device.Common;
+import com.clearent.device.domain.CommunicationRequest;
+import com.clearent.device.token.services.CardTokenizer;
+import com.clearent.device.token.services.CardTokenizerImpl;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.IDTMSRData;
 import com.idtechproducts.device.OnReceiverListener;
 import com.idtechproducts.device.StructConfigParameters;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 import static com.idtechproducts.device.ReaderInfo.EVENT_MSR_Types.EVENT_MSR_CARD_DATA;
-
+// clearent_vp3300 needs an interface
 public class ClearentOnReceiverListener implements OnReceiverListener {
-
-    private static final String FAILED_TO_READ_CARD_ERROR_RESPONSE = "Failed to read card";
-    private static final String DEVICE_SERIAL_NUMBER_EMV_TAG = "DF78";
-    private static final String KERNEL_VERSION_EMV_TAG = "DF79";
 
     private Clearent_VP3300 clearentVp3300;
     private PublicOnReceiverListener publicOnReceiverListener;
 
-    private ClearentConfigurator clearentConfigurator;
-
     public ClearentOnReceiverListener(Clearent_VP3300 clearentVp3300, PublicOnReceiverListener publicOnReceiverListener) {
         this.clearentVp3300 = clearentVp3300;
         this.publicOnReceiverListener = publicOnReceiverListener;
-        this.clearentConfigurator = new ClearentConfiguratorImpl(clearentVp3300, this);
     }
 
     @Override
@@ -50,102 +37,84 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             clearentVp3300.notifyFailure("Invalid Swipe");
             return;
         }
-
-        ClearentTransactionTokenRequest clearentTransactionTokenRequest = createClearentTransactionTokenRequestForASwipe(idtmsrData);
-        createTransactionToken(clearentTransactionTokenRequest);
+        CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
+        cardTokenizer.createTransactionToken(idtmsrData);
     }
-
-    public  ClearentTransactionTokenRequest createClearentTransactionTokenRequestForASwipe(IDTMSRData cardData) {
-        ClearentTransactionTokenRequest clearentTransactionTokenRequest = new ClearentTransactionTokenRequest();
-        if (cardData.encTrack2 != null) {
-            String encryptedTrack2Data = Common.byteToString(cardData.encTrack2);
-            clearentTransactionTokenRequest = createClearentTransactionToken(false ,true,encryptedTrack2Data.toUpperCase());
-        } else if (cardData.track2 != null) {
-            clearentTransactionTokenRequest = createClearentTransactionToken(false,false ,cardData.track2.toUpperCase());
-        }
-
-        //add the required tags as a tlv string for emv fallback swipe scenario (ClearentSwitch uses this)
-        Map<String, byte[]> requiredTags = new HashMap<>();
-        addRequiredTags(requiredTags);
-        clearentTransactionTokenRequest.setTlv(convertToTlv(requiredTags));
-
-        return clearentTransactionTokenRequest;
-    }
-
-    public  ClearentTransactionTokenRequest createClearentTransactionToken(boolean emv ,boolean encrypted, String track2Data) {
-        ClearentTransactionTokenRequest clearentTransactionTokenRequest = new ClearentTransactionTokenRequest();
-        clearentTransactionTokenRequest.setEmv(emv);
-        clearentTransactionTokenRequest.setEncrypted(encrypted);
-        clearentTransactionTokenRequest.setDeviceSerialNumber(clearentVp3300.getDeviceSerialNumber());
-        clearentTransactionTokenRequest.setKernelVersion(clearentVp3300.getKernelVersion());
-        clearentTransactionTokenRequest.setFirmwareVersion(clearentVp3300.getFirmwareVersion());
-        clearentTransactionTokenRequest.setTrack2Data(track2Data.toUpperCase());
-        return clearentTransactionTokenRequest;
-    }
-
-//TODO we need to inspect the messages coming back in lcdDisplay methods and changed them to the messages we are sending back
-    //in the ios framework too
-
-    //add this to lcdDisplay because it looks like we need to use that method to communicate through the listener
-//    - (void) deviceMessage:(NSString*)message {
-//        if(message != nil && [message isEqualToString:@"POWERING UNIPAY"]) {
-//       [self.publicDelegate deviceMessage:@"Starting VIVOpay..."];
-//            return;
-//        }
-//        if(message != nil && [message isEqualToString:@"RETURN_CODE_LOW_VOLUME"]) {
-//        [self.publicDelegate deviceMessage:@"VIVOpay failed to connect.Turn the headphones volume all the way up and reconnect."];
-//            return;
-//        }
-//    [self.publicDelegate deviceMessage:message];
-//    }
 
     @Override
     public void lcdDisplay(int i, String[] strings, int i1) {
-        publicOnReceiverListener.lcdDisplay(i, strings, i1);
+        publicOnReceiverListener.lcdDisplay(i, muteOrConvertMessages(strings), i1);
     }
 
     @Override
     public void lcdDisplay(int i, String[] strings, int i1, byte[] bytes, byte b) {
-        publicOnReceiverListener.lcdDisplay(i, strings, i1, bytes, b);
+        publicOnReceiverListener.lcdDisplay(i, muteOrConvertMessages(strings), i1, bytes, b);
+    }
+
+    //TODO verify these messages need to be converted (just).
+    String[] muteOrConvertMessages (String[] messages) {
+        if(messages == null || messages.length == 0) {
+            return messages;
+        }
+        List<String> messageList = new ArrayList<>();
+        for(String message:messages) {
+            if(message != null && "POWERING UNIPAY".equalsIgnoreCase(message) ) {
+                Log.i("INFO", "Starting VIVOpay...");
+                messageList.add("Starting VIVOpay...\n");
+            } else if(message != null && "RETURN_CODE_LOW_VOLUME".equalsIgnoreCase(message) ) {
+                Log.i("INFO", "VIVOpay failed to connect.Turn the headphones volume all the way up and reconnect.");
+                messageList.add("Starting VIVOpay...\n");
+            } else if(message != null && "TERMINATE".equalsIgnoreCase(message) ) {
+                Log.i("INFO", "IDTech framework terminated the request.");
+                messageList.add(message);
+            } else if(message != null && "DECLINED".equalsIgnoreCase(message) ) {
+                Log.i("INFO", "This is not really a decline. Clearent is creating a transaction token for later use.");
+            } else if(message != null && "APPROVED".equalsIgnoreCase(message) ) {
+                Log.i("INFO", "This is not really an approval. Clearent is creating a transaction token for later use.");
+            } else {
+                messageList.add(message);
+            }
+        }
+        if(messageList.size() == 0) {
+            return new String[]{};
+        }
+
+        String[] convertedMessages = new String[messageList.size()];
+        convertedMessages = messageList.toArray(convertedMessages);
+
+        return convertedMessages;
+    }
+
+    private void notify(String message) {
+        String[] messageArray = {message + "\n"};
+        lcdDisplay(0,messageArray,0);
     }
 
     @Override
     public void emvTransactionData(IDTEMVData idtemvData) {
         IDTEMVData card = idtemvData;
-//
-//        NSLog(@"EMV Transaction Data Response: = %@",[[IDT_VP3300 sharedController] device_getResponseCodeString:error]);
-//
-        //TODO As we test we could implement each of these short circuits or leave them out
 
-//        if (emvData.resultCodeV2 != EMV_RESULT_CODE_V2_NO_RESPONSE) {
-//            NSLog(@"emvData.resultCodeV2: = %@",[NSString stringWithFormat:@"EMV_RESULT_CODE_V2_response = %2X",emvData.resultCodeV2]);
-//        }
-//
         if (idtemvData == null) {
             return;
         }
 
         if (idtemvData.result == IDTEMVData.TIME_OUT) {
-            String[] message = {"TIMEOUT"};
-            lcdDisplay(0,message,0);
+            notify("TIMEOUT");
+            return;
         }
 
-
         if (idtemvData.result == IDTEMVData.DECLINED_OFFLINE) {
-            String[] message = {"DECLINED OFFLINE"};
-            lcdDisplay(0,message,0);
+            notify("DECLINED OFFLINE");
             return;
         }
 
         if (idtemvData.result == IDTEMVData.MSR_CARD_ERROR) {
-            String[] message = {"INVALID SWIPE"};
-            lcdDisplay(0,message,0);
+            notify("INVALID SWIPE");
             return;
         }
 
         if(idtemvData.result == IDTEMVData.APP_NO_MATCHING) {
-            String[] message = {"FALLBACK TO SWIPE"};
-            lcdDisplay(0,message,0);
+            notify("FALLBACK TO SWIPE");
             //TODO Do we need to do this ? Look at the flag in the demo class
 //            SEL startFallbackSwipeSelector = @selector(startFallbackSwipe);
 //        [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:startFallbackSwipeSelector userInfo:nil repeats:false];
@@ -163,8 +132,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         }
 
         if (idtemvData.cardType == 1) {
-            String[] message = {"CONTACTLESS NOT SUPPORTED"};
-            lcdDisplay(0,message,0);
+            notify("CONTACTLESS NOT SUPPORTED");
             return;
         }
 //
@@ -200,8 +168,8 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
            // }
       //  } else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == NONTECH_FALLBACK_SWIPE || entryMode == CONTACTLESS_EMV || entryMode == CONTACTLESS_MAGNETIC_SWIPE || emvData.cardType == 1)) {
         } else if (idtemvData.result == IDTEMVData.GO_ONLINE) {
-            ClearentTransactionTokenRequest clearentTransactionTokenRequest = createClearentTransactionTokenRequest(idtemvData);
-            createTransactionToken(clearentTransactionTokenRequest);
+            CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
+            cardTokenizer.createTransactionToken(idtemvData);
         }
     }
 
@@ -209,7 +177,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     public void deviceConnected() {
         publicOnReceiverListener.deviceConnected();
 
-        String[] message = {"VIVOpay connected. Waiting for configuration to complete..."};
+        String[] message = {"VIVOpay connected. Waiting for configuration to complete...\n"};
         publicOnReceiverListener.lcdDisplay(0,message,0);
 
         //Grab this information only after connecting to avoid any 'busy' signals with the reader.
@@ -223,11 +191,18 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         }
 
         if(!clearentVp3300.isConfigured()) {
-            clearentConfigurator.configure();
+            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(clearentVp3300);
+            clearentConfigurator.configure(createCommunicationRequest());
         } else {
-            String[] readyMessage = {"VIVOpay configured and ready"};
+            String[] readyMessage = {"VIVOpay configured and ready\n"};
             publicOnReceiverListener.lcdDisplay(0, readyMessage, 0);
         }
+    }
+
+    private CommunicationRequest createCommunicationRequest() {
+        String kernelVersion = clearentVp3300.getKernelVersion();
+        String deviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
+        return new CommunicationRequest(clearentVp3300.getPaymentsBaseUrl(), clearentVp3300.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
     }
 
     @Override
@@ -310,148 +285,5 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 //        return false;
 //    }
 //
-      public ClearentTransactionTokenRequest  createClearentTransactionTokenRequest(IDTEMVData idtemvData) {
-//        if(idtemvData.cardData != nil) {
-//            if(emvData.cardData.encTrack2 != nil) {
-//            [emvData.encryptedTags setValue:emvData.cardData.encTrack2 forKey:TRACK2_DATA_EMV_TAG];
-//                return [self createClearentTransactionTokenRequest:emvData.encryptedTags isEncrypted: true cardType:emvData.cardType];
-//            } else if(emvData.cardData.track2 != nil) {
-//            [emvData.unencryptedTags setValue:emvData.cardData.track2 forKey:TRACK2_DATA_EMV_TAG];
-//                return [self createClearentTransactionTokenRequest:emvData.unencryptedTags isEncrypted: false cardType:emvData.cardType];
-//            }
-//        } else if (emvData.unencryptedTags != nil) {
-//            return [self createClearentTransactionTokenRequest:emvData.unencryptedTags isEncrypted: false cardType:emvData.cardType];
-//        } else if (emvData.encryptedTags != nil) {
-//            return [self createClearentTransactionTokenRequest:emvData.encryptedTags isEncrypted: true cardType:emvData.cardType];
-//        }
 
-          if (idtemvData.unencryptedTags != null) {
-              return createClearentTransactionTokenRequest(idtemvData.unencryptedTags,false, idtemvData.cardType);
-          } else if (idtemvData.encryptedTags != null) {
-              return createClearentTransactionTokenRequest(idtemvData.encryptedTags,true,idtemvData.cardType);
-          }
-          throw new RuntimeException("no tags found");
-          //return new ClearentTransactionTokenRequest();
-    }
-
-    public  ClearentTransactionTokenRequest createClearentTransactionTokenRequest(Map<String,byte[]> tags, boolean encrypted, int cardType) {
-        ClearentTransactionTokenRequest clearentTransactionTokenRequest = new ClearentTransactionTokenRequest();
-
-         if(cardType != 1) {
-             Map<String, Map<String, byte[]>> retrievedTSYSTags = new HashMap<>();
-
-             String tsysTags = "82959A9B9C5F2A9F029F039F1A9F219F269F279F339F349F359F369F379F394F845F2D5F349F069F129F099F405F369F1E9F105657FF8106FF8105FFEE14FFEE06";
-             int emvRetrieveTransactionResultRt = clearentVp3300.emv_retrieveTransactionResult(Common.getByteArray(tsysTags), retrievedTSYSTags);
-
-             if (emvRetrieveTransactionResultRt == ErrorCode.SUCCESS) {
-                 //Map<String, Map<String, byte[]>> TLVDict = Common.processTLV(tlvData);
-                 Map<String, byte[]> unencryptedTags = retrievedTSYSTags.get("tags");
-                // Map<String, byte[]> maskedTags = TLVDict.get("masked");
-                 Map<String, byte[]> encryptedTags = retrievedTSYSTags.get("encrypted");
-
-
-                 //TODO handle encrypted tags
-                 String tlvInHex = null;
-                 if(encrypted) {
-                     tlvInHex = convertToTlv(encryptedTags);
-                 } else{
-
-                     for(Map.Entry<String, byte[]> entry: unencryptedTags.entrySet()) {
-                         String tag = entry.getKey();
-                         if(tag.equals("9F12")) {
-                             String applicationPreferredName = Common.getHexStringFromBytes(entry.getValue());
-                             clearentTransactionTokenRequest.setApplicationPreferredNameTag9F12(applicationPreferredName);
-                         } else if(tag.equals("57")) {
-                             String track2Data = Common.getHexStringFromBytes(entry.getValue());
-                             clearentTransactionTokenRequest.setTrack2Data(track2Data);
-                         } else if(tag.equals("FF8105")) {
-                              //TODO handle contactless track 2 data field
-                         }
-                     }
-                     removeInvalidTSYSTags(unencryptedTags);
-                     addRequiredTags(unencryptedTags);
-                     tlvInHex = convertToTlv(unencryptedTags);
-                 }
-
-                 clearentTransactionTokenRequest.setTlv(tlvInHex.toUpperCase());
-                 clearentTransactionTokenRequest.setEmv(true);
-                 clearentTransactionTokenRequest.setKernelVersion(clearentVp3300.getKernelVersion());
-                 clearentTransactionTokenRequest.setDeviceSerialNumber(clearentVp3300.getDeviceSerialNumber());
-                 clearentTransactionTokenRequest.setFirmwareVersion(clearentVp3300.getFirmwareVersion());
-                 clearentTransactionTokenRequest.setEncrypted(encrypted);
-             } else {
-                 String error = "Failed to get emv tags ";
-                 error += "Status: " + clearentVp3300.device_getResponseCodeString(emvRetrieveTransactionResultRt) + "";
-                 clearentVp3300.notifyFailure(error);
-             }
-         } else {
-             //TODO handle cardtype = 1 ??
-         }
-
-       return clearentTransactionTokenRequest;
-    }
-
-
-    public String convertToTlv(Map<String, byte[]> values) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for(Map.Entry<String, byte[]> entry: values.entrySet()) {
-            String tag = entry.getKey();
-            byte[] value = entry.getValue();
-            String hexString = Common.getHexStringFromBytes(value);
-            int valueLength = hexString.length()/2;
-            String length = String.format("%02X", valueLength);
-            stringBuilder.append(tag + length + Common.getHexStringFromBytes(value));
-        }
-        return stringBuilder.toString();
-    }
-
-   public void addRequiredTags(Map<String, byte[]> values) {
-        values.put(DEVICE_SERIAL_NUMBER_EMV_TAG,Common.getBytesFromHexString(Common.bytesToHex(clearentVp3300.getDeviceSerialNumber().getBytes())));
-        values.put(KERNEL_VERSION_EMV_TAG,Common.getBytesFromHexString(Common.bytesToHex(clearentVp3300.getKernelVersion().getBytes())));
-    }
-
-    public void removeInvalidTSYSTags(Map<String, byte[]> values) {
-
-        List<String> invalidTSYSTags = new ArrayList<>();
-        invalidTSYSTags.add("DFEF4D");
-        invalidTSYSTags.add("DFEF4C");
-        invalidTSYSTags.add("FFEE06");
-        invalidTSYSTags.add("FFEE13");
-        invalidTSYSTags.add("FFEE14");
-        invalidTSYSTags.add("FF8106");
-        invalidTSYSTags.add("FF8105");
-        invalidTSYSTags.add("56");
-        invalidTSYSTags.add("57");
-        invalidTSYSTags.add("DFEE26");
-        invalidTSYSTags.add("FFEE01");
-        invalidTSYSTags.add("DF8129");
-        invalidTSYSTags.add("9F12");
-
-        for (Iterator<Map.Entry<String, byte[]>> it = values.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<String, byte[]> entry = it.next();
-            String tag = entry.getKey();
-            if(invalidTSYSTags.contains(tag)) {
-                it.remove();
-            } else if(tag.equals("9F6E") && entry.getValue() == null) {
-                it.remove();
-            } else if(tag.equals("4F") && entry.getValue() == null) {
-            }
-
-        }
-    }
-
-     public void createTransactionToken(ClearentTransactionTokenRequest clearentTransactionTokenRequest) {
-        if(clearentTransactionTokenRequest == null || clearentTransactionTokenRequest.getTrack2Data() == null || "".equals(clearentTransactionTokenRequest.getTrack2Data())) {
-            String[] message = {FAILED_TO_READ_CARD_ERROR_RESPONSE};
-            publicOnReceiverListener.lcdDisplay(0,message,0);
-            return;
-        }
-
-         String kernelVersion = clearentVp3300.getKernelVersion();
-         String deviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
-         ConfigFetchRequest configFetchRequest = new ConfigFetchRequest(clearentVp3300.getPaymentsBaseUrl(), clearentVp3300.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
-         TransactionTokenCreatorResponseHandler transactionTokenCreatorResponseHandler = new TransactionTokenCreatorResponseHandler(clearentVp3300);
-         TransactionTokenCreator transactionTokenCreator = new TransactionTokenCreatorImpl(configFetchRequest, clearentTransactionTokenRequest);
-         transactionTokenCreator.createTransactionToken(transactionTokenCreatorResponseHandler);
-    }
 }

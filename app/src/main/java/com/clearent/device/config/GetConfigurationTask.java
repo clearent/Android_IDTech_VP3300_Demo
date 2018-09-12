@@ -4,28 +4,16 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.clearent.device.config.domain.ConfigFetchRequest;
-import com.idtechproducts.device.audiojack.UMLog;
-import com.idtechproducts.device.audiojack.config.UmXmlParser;
-
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
+import com.clearent.device.domain.CommunicationRequest;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
 
@@ -35,22 +23,22 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
 
     private static final String RELATIVE_PATH = "/rest/v2/mobile/devices";
 
-    private ConfigFetchRequest configFetchRequest;
+    private CommunicationRequest communicationRequest;
 
     public AsyncResponse delegate = null;
 
-    public GetConfigurationTask(ConfigFetchRequest configFetchRequest, AsyncResponse delegate) {
-        this.configFetchRequest = configFetchRequest;
+    public GetConfigurationTask(CommunicationRequest communicationRequest, AsyncResponse delegate) {
+        this.communicationRequest = communicationRequest;
         this.delegate = delegate;
     }
 
     @Override
     protected String doInBackground(Void... voids) {
         try {
-            String encodedKernelVersion = Uri.encode(configFetchRequest.getKernelVersion());
-            URL url = new URL(configFetchRequest.getBaseUrl() + RELATIVE_PATH + "/" + configFetchRequest.getDeviceSerialNumber() + "/" + encodedKernelVersion);
+            String encodedKernelVersion = Uri.encode(communicationRequest.getKernelVersion());
+            URL url = new URL(communicationRequest.getBaseUrl() + RELATIVE_PATH + "/" + communicationRequest.getDeviceSerialNumber() + "/" + encodedKernelVersion);
             HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-            urlConnection.setRequestProperty("public-key", configFetchRequest.getPublicKey());
+            urlConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
             urlConnection.setRequestProperty("Accept", "application/json");
             try {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));

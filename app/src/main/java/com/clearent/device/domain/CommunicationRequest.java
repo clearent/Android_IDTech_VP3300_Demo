@@ -1,13 +1,13 @@
-package com.clearent.device.config.domain;
+package com.clearent.device.domain;
 
-public class ConfigFetchRequest {
+public class CommunicationRequest {
 
     private String baseUrl;
     private String publicKey;
     private String deviceSerialNumber;
     private String kernelVersion;
 
-    public ConfigFetchRequest(String baseUrl, String publicKey, String deviceSerialNumber, String kernelVersion) {
+    public CommunicationRequest(String baseUrl, String publicKey, String deviceSerialNumber, String kernelVersion) {
         this.baseUrl = baseUrl;
         this.publicKey = publicKey;
         this.deviceSerialNumber = deviceSerialNumber;

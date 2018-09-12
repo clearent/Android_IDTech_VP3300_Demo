@@ -3,6 +3,7 @@ package com.clearent.device.config;
 import android.util.Log;
 
 import com.clearent.device.Clearent_VP3300;
+import com.clearent.device.DeviceConfigurable;
 import com.clearent.device.config.domain.CaPublicKey;
 import com.clearent.device.config.domain.ConfigurationResponse;
 import com.clearent.device.config.domain.MobileContactAid;
@@ -17,21 +18,25 @@ import java.util.Map;
 
 public class ClearentConfigFetcherResponseHandler {
 
-    private Clearent_VP3300 clearentVp3300;
+    private DeviceConfigurable deviceConfigurable;
 
-    public ClearentConfigFetcherResponseHandler(Clearent_VP3300 clearentVp3300) {
-        this.clearentVp3300 = clearentVp3300;
+    public ClearentConfigFetcherResponseHandler(DeviceConfigurable deviceConfigurable) {
+        this.deviceConfigurable = deviceConfigurable;
     }
 
     public void handleResponse(String json) {
+        if(json == null) {
+            notifyGeneralFailure();
+        }
         Gson gson = new Gson();
         try {
             ConfigurationResponse configurationResponse = gson.fromJson(json, ConfigurationResponse.class);
             configureAids(configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids());
             configureCaPublicKeys(configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys());
-            clearentVp3300.notifyReaderIsReady();
+            deviceConfigurable.notifyReaderIsReady();
         } catch (Exception e) {
-            clearentVp3300.notifyFailure("VIVOpay failed to retrieve configuration");
+            Log.e("ERROR","Failed to process configuration", e);
+            notifyFailure("Failed to process configuration");
         }
     }
 
@@ -44,21 +49,19 @@ public class ClearentConfigFetcherResponseHandler {
         for(CaPublicKey caPublicKey:caPublicKeys) {
             byte[] caPublickeyOrdered = Common.getByteArray(caPublicKey.getOrderedValues());
             ResDataStruct resData = new ResDataStruct();
-            int ret = clearentVp3300.emv_setCAPK(caPublickeyOrdered, resData);
+            int ret = deviceConfigurable.emv_setCAPK(caPublickeyOrdered, resData);
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
                     Log.i("INFO","EMV Ca Public Key " + caPublicKey.getName() + " Added ");
                 } else {
                     String error = "EMV Ca Public Key " + caPublicKey.getName() + " Failed. ";
                     error += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
-                    clearentVp3300.notifyFailure(error);
                     notifyFailure(error);
                 }
             } else {
                 String error = "EMV Ca Public Key " + caPublicKey.getName() + " Failed. ";
-                error += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
-                clearentVp3300.notifyFailure(error);
-                notifyFailure(error);
+                notifyGeneralFailure();
+                deviceConfigurable.notifyConfigurationFailure(ret, error);
             }
         }
     }
@@ -73,7 +76,7 @@ public class ClearentConfigFetcherResponseHandler {
         for(MobileContactAid mobileContactAid:mobileContactAids) {
             byte[] values = aidValuesAsByteArray(mobileContactAid.getValues());
             ResDataStruct resData = new ResDataStruct();
-            int ret = clearentVp3300.emv_setApplicationData(mobileContactAid.getName(), values, resData);
+            int ret = deviceConfigurable.emv_setApplicationData(mobileContactAid.getName(), values, resData);
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
                     Log.i("INFO","EMV Contact Aid " + mobileContactAid.getName() + " Added ");
@@ -84,8 +87,8 @@ public class ClearentConfigFetcherResponseHandler {
                 }
             } else {
                 String error = "EMV create AID " + mobileContactAid.getName() + " Failed. ";
-                error += "Status: " + clearentVp3300.device_getResponseCodeString(ret) + "";
-                notifyFailure(error);
+                notifyGeneralFailure();
+                deviceConfigurable.notifyConfigurationFailure(ret, error);
             }
         }
     }
@@ -108,8 +111,11 @@ public class ClearentConfigFetcherResponseHandler {
     }
 
     public void notifyFailure(String message) {
-        Log.e("ERROR", message);
-        clearentVp3300.notifyFailure("VIVOpay failed to retrieve configuration");
-        clearentVp3300.notifyFailure(message);
+        notifyGeneralFailure();
+        deviceConfigurable.notifyConfigurationFailure(message);
+    }
+
+    private void notifyGeneralFailure() {
+        deviceConfigurable.notifyConfigurationFailure("VIVOpay failed to retrieve configuration");
     }
 }

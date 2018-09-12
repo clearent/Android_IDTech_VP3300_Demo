@@ -241,7 +241,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         public void successfulTransactionToken(final TransactionToken transactionToken) {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
-                    info = "Successful transaction token found " + transactionToken.getTransactionToken();
+                    info += "Successful transaction token found " + transactionToken.getTransactionToken() + "\n";
                     handler.post(doUpdateStatus);
                     if (alertSwipe != null && alertSwipe.isShowing()) {
                         alertSwipe.dismiss();
@@ -631,13 +631,26 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         int finalTimout;
 
         public void lcdDisplay(int mode, String[] lines, int timeout) {
-            info = lines[0];
-            handler.post(doUpdateStatus);
+            if(lines != null && lines.length > 0 ) {
+                for(String line: lines) {
+                    if(line!= null && line.equalsIgnoreCase("VIVOPay configured and ready")) {
+                        swipeButton.setEnabled(true);
+                        commandBtn.setEnabled(true);
+                    }
+                }
+                info += lines[0];
+                handler.post(doUpdateStatus);
+            }
         }
 
         public void lcdDisplay(int mode, String[] lines, int timeout, byte[] languageCode, byte messageId) {
             type = (byte) mode;
             theLines = lines;
+
+            if(theLines == null || theLines.length == 0 ) {
+                return;
+            }
+
             finalTimout = timeout;
             Language = languageCode;
             MessageId = messageId;
