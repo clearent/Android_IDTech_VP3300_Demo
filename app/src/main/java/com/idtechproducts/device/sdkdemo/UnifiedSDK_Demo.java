@@ -241,7 +241,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         public void successfulTransactionToken(final TransactionToken transactionToken) {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
-                    info += "Successful transaction token found " + transactionToken.getTransactionToken() + "\n";
+                    info = "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
                     handler.post(doUpdateStatus);
                     if (alertSwipe != null && alertSwipe.isShowing()) {
                         alertSwipe.dismiss();
@@ -638,7 +638,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                         commandBtn.setEnabled(true);
                     }
                 }
-                info += lines[0];
+                info = lines[0];
                 handler.post(doUpdateStatus);
             }
         }
