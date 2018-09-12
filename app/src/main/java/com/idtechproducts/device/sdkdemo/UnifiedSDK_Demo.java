@@ -211,8 +211,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             swipeButton = (Button) rootView.findViewById(R.id.btn_swipeCard);
             swipeButton.setOnClickListener(new SwipeButtonListener());
 
+            swipeButton.setEnabled(false);
             commandBtn = (Button) rootView.findViewById(R.id.btn_command);
             commandBtn.setOnClickListener(new CommandButtonListener());
+            commandBtn.setEnabled(false);
+
             profileManager = new ProfileManager(this);
 
             return rootView;
@@ -235,6 +238,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             if (device != null)
                 device.unregisterListen();
             super.onDestroy();
+        }
+
+        @Override
+         public void isReady() {
+            swipeButton.setEnabled(true);
+            commandBtn.setEnabled(true);
         }
 
         @Override
@@ -632,12 +641,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         public void lcdDisplay(int mode, String[] lines, int timeout) {
             if(lines != null && lines.length > 0 ) {
-                for(String line: lines) {
-                    if(line!= null && line.equalsIgnoreCase("VIVOPay configured and ready")) {
-                        swipeButton.setEnabled(true);
-                        commandBtn.setEnabled(true);
-                    }
-                }
                 info = lines[0];
                 handler.post(doUpdateStatus);
             }
@@ -2025,8 +2028,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 if (alertSwipe.isShowing())
                     alertSwipe.dismiss();
             status.setText("Disconnected");
-            swipeButton.setEnabled(true);
-            commandBtn.setEnabled(true);
+
+            swipeButton.setEnabled(false);
+            commandBtn.setEnabled(false);
+
             if (!Common.getBootLoaderMode()) {
                 info = "Reader is disconnected";
                 detail = "";

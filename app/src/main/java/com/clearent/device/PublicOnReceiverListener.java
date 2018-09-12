@@ -5,6 +5,8 @@ import com.idtechproducts.device.StructConfigParameters;
 
 public interface PublicOnReceiverListener {
 
+    void isReady();
+
     void successfulTransactionToken(TransactionToken transactionToken);
 
     //Just like our iOS wrapping strategy we don't expose this method.

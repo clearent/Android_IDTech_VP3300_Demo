@@ -518,14 +518,13 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         completeEmvTransaction();
     }
 
-
     public void notifyNewTransactionToken(TransactionToken transactionToken) {
         publicOnReceiverListener.successfulTransactionToken(transactionToken);
         completeEmvTransaction();
     }
 
     /*
-     * The goal of this method is to
+     * The goal of this method is end the normal authentication flow in favor of translating the card to a transaction token.
      */
     void completeEmvTransaction() {
         byte[] authResponseCode = new byte[2];
@@ -546,6 +545,7 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         configured = true;
         String[] message = {"VIVOpay configured and ready"};
         clearentOnReceiverListener.lcdDisplay(0, message, 0);
+        publicOnReceiverListener.isReady();
     }
 
     public void setDeviceSerialNumber() {
