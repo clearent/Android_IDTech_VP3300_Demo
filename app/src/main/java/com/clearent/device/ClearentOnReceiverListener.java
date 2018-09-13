@@ -6,8 +6,10 @@ import android.util.Log;
 import com.clearent.device.config.ClearentConfigurator;
 import com.clearent.device.config.ClearentConfiguratorImpl;
 import com.clearent.device.domain.CommunicationRequest;
+import com.clearent.device.domain.EntryMode;
 import com.clearent.device.token.services.CardTokenizer;
 import com.clearent.device.token.services.CardTokenizerImpl;
+import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.IDTMSRData;
@@ -16,9 +18,10 @@ import com.idtechproducts.device.StructConfigParameters;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.idtechproducts.device.ReaderInfo.EVENT_MSR_Types.EVENT_MSR_CARD_DATA;
-//TODO clearent_vp3300 needs an interface
+
 public class ClearentOnReceiverListener implements OnReceiverListener {
 
     private Clearent_VP3300 clearentVp3300;
@@ -64,6 +67,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         }
         List<String> messageList = new ArrayList<>();
         for(String message:messages) {
+            Log.i("WATCH", message);
             if(message != null && "POWERING UNIPAY".equalsIgnoreCase(message) ) {
                 Log.i("INFO", "Starting VIVOpay...");
                 messageList.add("Starting VIVOpay...\n");
@@ -120,13 +124,12 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         }
 
         if(idtemvData.result == IDTEMVData.APP_NO_MATCHING) {
+            //TODO test this..look at the entry mode. is it a non technical fallback swipe
+            EntryMode entryMode = getEntryMode(idtemvData);
+            Log.i("INFO","Entry Mode is " + entryMode.name());
             clearentVp3300.setPreviousDipDidNotMatchOnApp(true);
-            notify("FALLBACK TO SWIPE");
-            //TODO Do we need to do this ? Look at the flag in the demo class
-            //TODO do we need a delay????
+            notify("SWIPE CARD");
             clearentVp3300.msr_startMSRSwipe();
-//            SEL startFallbackSwipeSelector = @selector(startFallbackSwipe);
-//        [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:startFallbackSwipeSelector userInfo:nil repeats:false];
             return;
         }
 
@@ -144,57 +147,62 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             notify("CONTACTLESS NOT SUPPORTED");
             return;
         }
-//
-//
-//        int FALLBACK_SWIPE=80, NONTECH_FALLBACK_SWIPE=95, CONTACTLESS_EMV=07, CONTACTLESS_MAGNETIC_SWIPE=91;
-//        int SWIPE=90;
-//
-//        int entryMode = 0;
-//        if (idtemvData.unencryptedTags != null) {
-//            entryMode = getEntryMode([[idtemvData.unencryptedTags objectForKey:@"9F39"] description]);
-//        } else if (emvData.encryptedTags != nil) {
-//            entryMode = getEntryMode([[emvData.encryptedTags objectForKey:@"9F39"] description]);
-//        }
-//
-//        if(entryMode == 0) {
-//            NSLog(@"No entryMode defined");
-//            return;
-//        } else {
-//            NSLog(@"entryMode: %d", entryMode);
-//        }
-//
 
-         //TODO _originalEntryMode logic to keep swipes from having to send down the kernel version in the emv tags
+        EntryMode entryMode = getEntryMode(idtemvData);
+        Log.i("INFO","Entry Mode is " + entryMode.name());
+        if(EntryMode.INVALID.equals(entryMode)) {
+            Log.i("ERROR","No entry mode found. Skip processing.");
+            return;
+        }
+
         //TODO is nontech fallback swipe handled ????
         if (idtemvData.msr_cardData != null && idtemvData.result == IDTEMVData.MSR_SUCCESS) {
-            //if(entryMode == SWIPE) {
+            if(entryMode == EntryMode.FALLBACK_SWIPE) {
+                CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
+                cardTokenizer.createTransactionTokenForFallback(idtemvData.msr_cardData);
+            } else if(entryMode == EntryMode.SWIPE) {
                 swipeMSRData(idtemvData.msr_cardData);
-            //} else if(isSupportedEmvEntryMode(entryMode)) {
-              //  ClearentTransactionTokenRequest *clearentTransactionTokenRequest = [self createClearentTransactionTokenRequest:emvData];
-           // [self createTransactionToken:clearentTransactionTokenRequest];
-           // } else {
-           // [self deviceMessage:GENERIC_CARD_READ_ERROR_RESPONSE];
-           // }
-      //  } else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == NONTECH_FALLBACK_SWIPE || entryMode == CONTACTLESS_EMV || entryMode == CONTACTLESS_MAGNETIC_SWIPE || emvData.cardType == 1)) {
-        } else if (idtemvData.result == IDTEMVData.GO_ONLINE) {
+            }
+            //TODO test non tech fallback
+        } else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == EntryMode.NONTECH_FALLBACK_SWIPE || entryMode == EntryMode.EMV)) {
             CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
             cardTokenizer.createTransactionToken(idtemvData);
         }
     }
 
+    private EntryMode getEntryMode(IDTEMVData idtemvData) {
+        Map<String, byte[]> tags = null;
+        if (idtemvData.unencryptedTags != null) {
+            tags = idtemvData.unencryptedTags;
+        } else if (idtemvData.encryptedTags != null) {
+            tags = idtemvData.encryptedTags;
+        }
+        byte[] entryModeBytes = tags.get("9F39");
+        String hexStringFromBytes = Common.getHexStringFromBytes(entryModeBytes);
+        int entryMode = Integer.decode(hexStringFromBytes);
+        return EntryMode.valueOfByInt(entryMode);
+    }
+
     @Override
     public void deviceConnected() {
         publicOnReceiverListener.deviceConnected();
-
         String[] message = {"VIVOpay connected. Waiting for configuration to complete...\n"};
         publicOnReceiverListener.lcdDisplay(0,message,0);
 
+        //temp!!!
+        clearentVp3300.setConfigured(true);
+
+        configure();
+    }
+
+    private void configure() {
         //Grab this information only after connecting to avoid any 'busy' signals with the reader.
         String previousDeviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
         clearentVp3300.setDeviceSerialNumber();
         clearentVp3300.setFirmwareVersion();
         clearentVp3300.setKernelVersion();
 
+        //If they connect a different reader set the configure flag to false to force configuration.
         if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(clearentVp3300.getDeviceSerialNumber())) {
             clearentVp3300.setConfigured(false);
         }
@@ -268,31 +276,4 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     public void dataInOutMonitor(byte[] bytes, boolean b) {
         publicOnReceiverListener.dataInOutMonitor(bytes, b);
     }
-
-//
-//    - (void) startFallbackSwipe {
-//        RETURN_CODE startMSRSwipeRt = [[IDT_VP3300 sharedController] msr_startMSRSwipe];
-//        if (RETURN_CODE_DO_SUCCESS == startMSRSwipeRt) {
-//       [self deviceMessage:@"FALLBACK TO SWIPE start success"];
-//        } else{
-//       [self deviceMessage:@"FALLBACK TO SWIPE start failed"];
-//        }
-//    }
-//
-//    int getEntryMode (NSString* rawEntryMode) {
-//        if(rawEntryMode == nil || [rawEntryMode isEqualToString:@""]) {
-//            return 0;
-//        }
-//        NSString *entryModeWithoutTags = [rawEntryMode stringByReplacingOccurrencesOfString:@"[\\<\\>]" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, [rawEntryMode length])];
-//        return [entryModeWithoutTags intValue];
-//    }
-//
-//    BOOL isSupportedEmvEntryMode (int entryMode) {
-//        if(entryMode == FALLBACK_SWIPE || entryMode == NONTECH_FALLBACK_SWIPE || entryMode == CONTACTLESS_EMV || entryMode == CONTACTLESS_MAGNETIC_SWIPE) {
-//            return true;
-//        }
-//        return false;
-//    }
-//
-
 }

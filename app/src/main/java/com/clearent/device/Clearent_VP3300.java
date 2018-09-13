@@ -9,16 +9,14 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
-public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAware, DeviceConfigurable, HasDeviceMetadata, Tokenizable {
+public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAware, DeviceConfigurable, HasServerCommunication, HasDeviceMetadata, HasTokenizingSupport {
 
     private static IDT_VP3300 idt_VP3300;
-    private byte[] tag8A = new byte[]{0x30, 0x30};
-
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
     private String deviceSerialNumber;
     private String kernelVersion;
-    private String firmareVersion;
+    private String firmwareVersion;
 
     private PublicOnReceiverListener publicOnReceiverListener;
     private ClearentOnReceiverListener clearentOnReceiverListener;
@@ -26,17 +24,18 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
     private boolean previousDipDidNotMatchOnApp = false;
 
     public Clearent_VP3300(PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
-        this.publicOnReceiverListener = publicOnReceiverListener;
-        clearentOnReceiverListener = new ClearentOnReceiverListener(this, publicOnReceiverListener);
+        initWithOutIDTech(publicOnReceiverListener, paymentsBaseUrl, paymentsPublicKey);
         idt_VP3300 = new IDT_VP3300(clearentOnReceiverListener, context);
-        this.paymentsBaseUrl = paymentsBaseUrl;
-        this.paymentsPublicKey = paymentsPublicKey;
     }
 
     public Clearent_VP3300(PublicOnReceiverListener publicOnReceiverListener, OnReceiverListenerPINRequest callback2, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
+        initWithOutIDTech(publicOnReceiverListener, paymentsBaseUrl, paymentsPublicKey);
+        idt_VP3300 = new IDT_VP3300(clearentOnReceiverListener, callback2, context);
+    }
+
+    private void initWithOutIDTech(PublicOnReceiverListener publicOnReceiverListener, String paymentsBaseUrl, String paymentsPublicKey) {
         this.publicOnReceiverListener = publicOnReceiverListener;
         clearentOnReceiverListener = new ClearentOnReceiverListener(this, publicOnReceiverListener);
-        idt_VP3300 = new IDT_VP3300(clearentOnReceiverListener, callback2, context);
         this.paymentsBaseUrl = paymentsBaseUrl;
         this.paymentsPublicKey = paymentsPublicKey;
     }
@@ -476,24 +475,8 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         return paymentsBaseUrl;
     }
 
-    public void setPaymentsBaseUrl(String paymentsBaseUrl) {
-        this.paymentsBaseUrl = paymentsBaseUrl;
-    }
-
     public String getPaymentsPublicKey() {
         return paymentsPublicKey;
-    }
-
-    public void setPaymentsPublicKey(String paymentsPublicKey) {
-        this.paymentsPublicKey = paymentsPublicKey;
-    }
-
-    public ClearentOnReceiverListener getClearentOnReceiverListener() {
-        return clearentOnReceiverListener;
-    }
-
-    public void setClearentOnReceiverListener(ClearentOnReceiverListener clearentOnReceiverListener) {
-        this.clearentOnReceiverListener = clearentOnReceiverListener;
     }
 
     public void notifyFailure(String message) {
@@ -584,9 +567,9 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
         StringBuilder firmwareVersionSb = new StringBuilder();
         int firmwareVersionRt = device_getFirmwareVersion(firmwareVersionSb);
         if(firmwareVersionRt == ErrorCode.SUCCESS) {
-            firmareVersion= firmwareVersionSb.toString();
+            firmwareVersion= firmwareVersionSb.toString();
         } else {
-            firmareVersion = "unknown";
+            firmwareVersion = "unknown";
         }
     }
 
@@ -624,7 +607,7 @@ public class Clearent_VP3300 implements TransactionTokenNotifier, ReaderReadyAwa
     }
 
     public String getFirmwareVersion() {
-        return firmareVersion;
+        return firmwareVersion;
     }
 
     public boolean isConfigured() {

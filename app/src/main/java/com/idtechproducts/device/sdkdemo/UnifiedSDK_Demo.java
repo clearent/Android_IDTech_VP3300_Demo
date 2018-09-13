@@ -303,6 +303,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         void openReaderSelectDialog() {
             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
             builder.setTitle("Select a device:");
             builder.setCancelable(false);
             builder.setItems(R.array.reader_type, new DialogInterface.OnClickListener() {
@@ -354,6 +355,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                         device.registerListen();
                 }
             });
+
+            swipeButton.setEnabled(true);
+            commandBtn.setEnabled(true);
+
             builder.create().show();
         }
 
@@ -1286,7 +1291,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                 byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
 
-                //TODO interesting fallback flag ..test it !!!
                 Clearent_VP3300.emv_allowFallback(true);
                 if (Clearent_VP3300.emv_getAutoAuthenticateTransaction())
                     return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, tags, false);
