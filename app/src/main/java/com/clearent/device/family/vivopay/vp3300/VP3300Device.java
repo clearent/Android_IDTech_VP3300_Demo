@@ -15,8 +15,10 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
-//TODO look in idtech docs and see if there is anything different between a 3300 and say a 3310.
-// or did we just make a universal interface ?
+/**
+ * Main interface for the VP3300.
+ * The majority of the methods are implemented by the IDT_Device class. See IDTech documentation.
+ */
 public interface VP3300Device extends TransactionTokenNotifier, Configurable, HasServerCommunication, HasDeviceMetadata, HasTokenizingSupport, HasSwipeSupport {
 
     boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType);
