@@ -9,15 +9,9 @@ public interface PublicOnReceiverListener {
 
     void successfulTransactionToken(TransactionToken transactionToken);
 
-    //Just like our iOS wrapping strategy we don't expose this method.
-    //void swipeMSRData(IDTMSRData var1);
-
     void lcdDisplay(int var1, String[] var2, int var3);
 
     void lcdDisplay(int var1, String[] var2, int var3, byte[] var4, byte var5);
-
-    //Just like our iOS wrapping strategy we don't expose this method.
-    //void emvTransactionData(IDTEMVData var1);
 
     void deviceConnected();
 

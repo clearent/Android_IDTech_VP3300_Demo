@@ -1,12 +1,14 @@
-package com.clearent.device;
+package com.clearent.device.family.vivopay.vp3300;
 
 
 import android.util.Log;
 
+import com.clearent.device.PublicOnReceiverListener;
 import com.clearent.device.config.ClearentConfigurator;
 import com.clearent.device.config.ClearentConfiguratorImpl;
 import com.clearent.device.domain.CommunicationRequest;
 import com.clearent.device.domain.EntryMode;
+import com.clearent.device.family.vivopay.vp3300.VP3300Device;
 import com.clearent.device.token.services.CardTokenizer;
 import com.clearent.device.token.services.CardTokenizerImpl;
 import com.idtechproducts.device.Common;
@@ -22,13 +24,14 @@ import java.util.Map;
 
 import static com.idtechproducts.device.ReaderInfo.EVENT_MSR_Types.EVENT_MSR_CARD_DATA;
 
-public class ClearentOnReceiverListener implements OnReceiverListener {
+public class VP3300OnReceiverListener implements OnReceiverListener {
 
-    private Clearent_VP3300 clearentVp3300;
+    private VP3300Device vp3300Device;
     private PublicOnReceiverListener publicOnReceiverListener;
+    private boolean previousDipDidNotMatchOnApp = false;
 
-    public ClearentOnReceiverListener(Clearent_VP3300 clearentVp3300, PublicOnReceiverListener publicOnReceiverListener) {
-        this.clearentVp3300 = clearentVp3300;
+    public VP3300OnReceiverListener(VP3300Device vp3300Device, PublicOnReceiverListener publicOnReceiverListener) {
+        this.vp3300Device = vp3300Device;
         this.publicOnReceiverListener = publicOnReceiverListener;
     }
 
@@ -36,14 +39,14 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     public void swipeMSRData(IDTMSRData idtmsrData) {
 
         if (idtmsrData == null || idtmsrData.result != ErrorCode.SUCCESS || idtmsrData.event != EVENT_MSR_CARD_DATA || (idtmsrData.track2 == null && idtmsrData.encTrack2 == null)) {
-            clearentVp3300.notifyFailure("Invalid Swipe");
+            vp3300Device.notifyFailure("Invalid Swipe");
             return;
         }
 
-        CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
+        CardTokenizer cardTokenizer = new CardTokenizerImpl(vp3300Device);
 
-        if(clearentVp3300.isPreviousDipDidNotMatchOnApp()) {
-            clearentVp3300.setPreviousDipDidNotMatchOnApp(false);
+        if(isPreviousDipDidNotMatchOnApp()) {
+            setPreviousDipDidNotMatchOnApp(false);
             cardTokenizer.createTransactionTokenForFallback(idtmsrData);
         } else {
             cardTokenizer.createTransactionToken(idtmsrData);
@@ -127,9 +130,9 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             //TODO test this..look at the entry mode. is it a non technical fallback swipe
             EntryMode entryMode = getEntryMode(idtemvData);
             Log.i("INFO","Entry Mode is " + entryMode.name());
-            clearentVp3300.setPreviousDipDidNotMatchOnApp(true);
+            setPreviousDipDidNotMatchOnApp(true);
             notify("SWIPE CARD");
-            clearentVp3300.msr_startMSRSwipe();
+            vp3300Device.msr_startMSRSwipe();
             return;
         }
 
@@ -158,14 +161,14 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         //TODO is nontech fallback swipe handled ????
         if (idtemvData.msr_cardData != null && idtemvData.result == IDTEMVData.MSR_SUCCESS) {
             if(entryMode == EntryMode.FALLBACK_SWIPE) {
-                CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
+                CardTokenizer cardTokenizer = new CardTokenizerImpl(vp3300Device);
                 cardTokenizer.createTransactionTokenForFallback(idtemvData.msr_cardData);
             } else if(entryMode == EntryMode.SWIPE) {
                 swipeMSRData(idtemvData.msr_cardData);
             }
             //TODO test non tech fallback
         } else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == EntryMode.NONTECH_FALLBACK_SWIPE || entryMode == EntryMode.EMV)) {
-            CardTokenizer cardTokenizer = new CardTokenizerImpl(clearentVp3300);
+            CardTokenizer cardTokenizer = new CardTokenizerImpl(vp3300Device);
             cardTokenizer.createTransactionToken(idtemvData);
         }
     }
@@ -190,25 +193,25 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         publicOnReceiverListener.lcdDisplay(0,message,0);
 
         //temp!!!
-        clearentVp3300.setConfigured(true);
+        vp3300Device.setConfigured(true);
 
         configure();
     }
 
     private void configure() {
         //Grab this information only after connecting to avoid any 'busy' signals with the reader.
-        String previousDeviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
-        clearentVp3300.setDeviceSerialNumber();
-        clearentVp3300.setFirmwareVersion();
-        clearentVp3300.setKernelVersion();
+        String previousDeviceSerialNumber = vp3300Device.getDeviceSerialNumber();
+        vp3300Device.setDeviceSerialNumber();
+        vp3300Device.setFirmwareVersion();
+        vp3300Device.setKernelVersion();
 
         //If they connect a different reader set the configure flag to false to force configuration.
-        if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(clearentVp3300.getDeviceSerialNumber())) {
-            clearentVp3300.setConfigured(false);
+        if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(vp3300Device.getDeviceSerialNumber())) {
+            vp3300Device.setConfigured(false);
         }
 
-        if(!clearentVp3300.isConfigured()) {
-            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(clearentVp3300);
+        if(!vp3300Device.isConfigured()) {
+            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(vp3300Device);
             clearentConfigurator.configure(createCommunicationRequest());
         } else {
             String[] readyMessage = {"VIVOpay configured and ready\n"};
@@ -217,9 +220,9 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     }
 
     private CommunicationRequest createCommunicationRequest() {
-        String kernelVersion = clearentVp3300.getKernelVersion();
-        String deviceSerialNumber = clearentVp3300.getDeviceSerialNumber();
-        return new CommunicationRequest(clearentVp3300.getPaymentsBaseUrl(), clearentVp3300.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
+        String kernelVersion = vp3300Device.getKernelVersion();
+        String deviceSerialNumber = vp3300Device.getDeviceSerialNumber();
+        return new CommunicationRequest(vp3300Device.getPaymentsBaseUrl(), vp3300Device.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
     }
 
     @Override
@@ -275,5 +278,20 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     @Override
     public void dataInOutMonitor(byte[] bytes, boolean b) {
         publicOnReceiverListener.dataInOutMonitor(bytes, b);
+    }
+
+    /**
+     * Call this method to reset any state between transactions.
+     */
+    public void reset() {
+        previousDipDidNotMatchOnApp = false;
+    }
+
+    public boolean isPreviousDipDidNotMatchOnApp() {
+        return previousDipDidNotMatchOnApp;
+    }
+
+    public void setPreviousDipDidNotMatchOnApp(boolean previousDipDidNotMatchOnApp) {
+        this.previousDipDidNotMatchOnApp = previousDipDidNotMatchOnApp;
     }
 }

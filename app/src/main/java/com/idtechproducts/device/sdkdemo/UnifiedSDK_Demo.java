@@ -11,8 +11,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import com.clearent.device.Clearent_VP3300;
+import com.clearent.device.family.vivopay.vp3300.Clearent_VP3300;
 import com.clearent.device.PublicOnReceiverListener;
+import com.clearent.device.family.vivopay.vp3300.VP3300Device;
 import com.clearent.device.token.domain.TransactionToken;
 import com.dbconnection.dblibrarybeta.ProfileManager;
 import com.dbconnection.dblibrarybeta.ProfileUtility;
@@ -22,17 +23,15 @@ import com.idtechproducts.device.ErrorCodeInfo;
 import com.idtechproducts.device.ICCReaderStatusStruct;
 import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.IDTMSRData;
-import com.idtechproducts.device.IDT_VP3300;
-import com.idtechproducts.device.OnReceiverListener;
 import com.idtechproducts.device.OnReceiverListenerPINRequest;
 import com.idtechproducts.device.ReaderInfo.DEVICE_TYPE;
 import com.idtechproducts.device.ResDataStruct;
 import com.idtechproducts.device.StructConfigParameters;
-import com.idtechproducts.device.audiojack.UMLog;
 import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 import com.idtechproducts.device.audiojack.tools.FirmwareUpdateToolMsg;
 import com.idtechproducts.device.bluetooth.BluetoothLEController;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -133,10 +132,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
     }
 
 
+    @SuppressLint("ValidFragment")
     public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener, OnReceiverListenerPINRequest, FirmwareUpdateToolMsg, RESTResponse {
         private final long BLE_ScanTimeout = 5000; //in milliseconds
 
-        private Clearent_VP3300 device;
+        private VP3300Device device;
         private FirmwareUpdateTool fwTool;
         private static final int REQUEST_ENABLE_BT = 1;
         private long totalEMVTime;

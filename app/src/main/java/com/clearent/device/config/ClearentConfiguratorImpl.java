@@ -2,7 +2,7 @@ package com.clearent.device.config;
 
 import android.util.Log;
 
-import com.clearent.device.DeviceConfigurable;
+import com.clearent.device.Configurable;
 import com.clearent.device.domain.CommunicationRequest;
 import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
@@ -13,10 +13,10 @@ import java.util.Date;
 
 public class ClearentConfiguratorImpl implements ClearentConfigurator {
 
-    private DeviceConfigurable deviceConfigurable;
+    private Configurable configurable;
 
-    public ClearentConfiguratorImpl(DeviceConfigurable deviceConfigurable) {
-        this.deviceConfigurable = deviceConfigurable;
+    public ClearentConfiguratorImpl(Configurable configurable) {
+        this.configurable = configurable;
     }
 
     @Override
@@ -32,30 +32,30 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
         String upperCaseTlv = defaultTerminalTags.toUpperCase();
         ResDataStruct resDatStruct = new ResDataStruct();
         byte[] tlvBytes = Common.getBytesFromHexString(upperCaseTlv);
-        int setTerminalDataRt = deviceConfigurable.emv_setTerminalData(tlvBytes,resDatStruct);
+        int setTerminalDataRt = configurable.emv_setTerminalData(tlvBytes,resDatStruct);
         if (ErrorCode.SUCCESS == setTerminalDataRt) {
             Log.i("INFO","Emv Entry mode changed from 07 to 05");
         } else{
             String error = "Reader failed to configure default terminal tags. ";
-            deviceConfigurable.notifyCommandFailure(setTerminalDataRt, error);
+            configurable.notifyCommandFailure(setTerminalDataRt, error);
         }
     }
 
     private void configureReader(CommunicationRequest communicationRequest) {
-        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(deviceConfigurable);
+        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(configurable);
         ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(communicationRequest);
         clearentConfigFetcher.fetchConfiguration(clearentConfigFetcherResponseHandler);
     }
 
     private void setTerminalMajorConfiguration() {
         ResDataStruct resDataStruct = new ResDataStruct();
-        int commandRt = deviceConfigurable.device_sendDataCommand("6016", false, "05", resDataStruct);
+        int commandRt = configurable.device_sendDataCommand("6016", false, "05", resDataStruct);
         if (commandRt == ErrorCode.SUCCESS) {
             String info = "Terminal Major Configuration Succeeded ";
             Log.i("INFO", info);
         } else {
             String error = "Reader failed to configure (terminal major). ";
-            deviceConfigurable.notifyCommandFailure(commandRt, error);
+            configurable.notifyCommandFailure(commandRt, error);
         }
     }
 
@@ -73,7 +73,7 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
     private int initClockDate() {
         String clockDate = getClockDateAsYYYYMMDD();
         ResDataStruct resDataStruct = new ResDataStruct();
-        return deviceConfigurable.device_sendDataCommand("2503", false, clockDate, resDataStruct);
+        return configurable.device_sendDataCommand("2503", false, clockDate, resDataStruct);
     }
 
     private String getClockDateAsYYYYMMDD() {
@@ -85,7 +85,7 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
     private int initClockTime() {
         String clockTime = getClockTimeAsHHMM();
         ResDataStruct resDataStruct = new ResDataStruct();
-        return deviceConfigurable.device_sendDataCommand("2501", false, clockTime, resDataStruct);
+        return configurable.device_sendDataCommand("2501", false, clockTime, resDataStruct);
     }
 
     private String getClockTimeAsHHMM() {
