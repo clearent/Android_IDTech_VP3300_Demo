@@ -8,4 +8,6 @@ public interface Configurable extends HasDeviceCommand, ReaderReadyAware {
     int emv_setCAPK(byte[] key, ResDataStruct respData);
     int emv_setApplicationData(String aid, byte[] TLV, ResDataStruct respData);
     int emv_setTerminalData(byte[] TLV, ResDataStruct respData);
+    void setConfigured(boolean configured);
+    boolean isConfigured();
 }

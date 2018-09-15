@@ -1,14 +1,13 @@
-package com.clearent.device.family.vivopay.vp3300;
+package com.clearent.device;
 
 
 import android.util.Log;
 
-import com.clearent.device.PublicOnReceiverListener;
 import com.clearent.device.config.ClearentConfigurator;
 import com.clearent.device.config.ClearentConfiguratorImpl;
 import com.clearent.device.domain.CommunicationRequest;
 import com.clearent.device.domain.EntryMode;
-import com.clearent.device.family.vivopay.vp3300.VP3300Device;
+import com.clearent.device.family.IDTechCommonKernelDevice;
 import com.clearent.device.token.services.CardTokenizer;
 import com.clearent.device.token.services.CardTokenizerImpl;
 import com.idtechproducts.device.Common;
@@ -24,14 +23,14 @@ import java.util.Map;
 
 import static com.idtechproducts.device.ReaderInfo.EVENT_MSR_Types.EVENT_MSR_CARD_DATA;
 
-public class VP3300OnReceiverListener implements OnReceiverListener {
+public class ClearentOnReceiverListener implements OnReceiverListener {
 
-    private VP3300Device vp3300Device;
+    private IDTechCommonKernelDevice idTechCommonKernelDevice;
     private PublicOnReceiverListener publicOnReceiverListener;
     private boolean previousDipDidNotMatchOnApp = false;
 
-    public VP3300OnReceiverListener(VP3300Device vp3300Device, PublicOnReceiverListener publicOnReceiverListener) {
-        this.vp3300Device = vp3300Device;
+    public ClearentOnReceiverListener(IDTechCommonKernelDevice idTechCommonKernelDevice, PublicOnReceiverListener publicOnReceiverListener) {
+        this.idTechCommonKernelDevice = idTechCommonKernelDevice;
         this.publicOnReceiverListener = publicOnReceiverListener;
     }
 
@@ -39,11 +38,11 @@ public class VP3300OnReceiverListener implements OnReceiverListener {
     public void swipeMSRData(IDTMSRData idtmsrData) {
 
         if (idtmsrData == null || idtmsrData.result != ErrorCode.SUCCESS || idtmsrData.event != EVENT_MSR_CARD_DATA || (idtmsrData.track2 == null && idtmsrData.encTrack2 == null)) {
-            vp3300Device.notifyFailure("Invalid Swipe");
+            notifyFailure("Invalid Swipe");
             return;
         }
 
-        CardTokenizer cardTokenizer = new CardTokenizerImpl(vp3300Device);
+        CardTokenizer cardTokenizer = new CardTokenizerImpl(idTechCommonKernelDevice);
 
         if(isPreviousDipDidNotMatchOnApp()) {
             setPreviousDipDidNotMatchOnApp(false);
@@ -51,6 +50,11 @@ public class VP3300OnReceiverListener implements OnReceiverListener {
         } else {
             cardTokenizer.createTransactionToken(idtmsrData);
         }
+    }
+
+    void notifyFailure(String message) {
+        String[] messageArray = {message};
+        lcdDisplay(0, messageArray, 0);
     }
 
     @Override
@@ -126,13 +130,14 @@ public class VP3300OnReceiverListener implements OnReceiverListener {
             return;
         }
 
+        //TODO see if we should check for a fallback flag already set (see demo). useful if this class is reused for other families
         if(idtemvData.result == IDTEMVData.APP_NO_MATCHING) {
             //TODO test this..look at the entry mode. is it a non technical fallback swipe
             EntryMode entryMode = getEntryMode(idtemvData);
             Log.i("INFO","Entry Mode is " + entryMode.name());
             setPreviousDipDidNotMatchOnApp(true);
             notify("SWIPE CARD");
-            vp3300Device.msr_startMSRSwipe();
+            idTechCommonKernelDevice.msr_startMSRSwipe();
             return;
         }
 
@@ -161,14 +166,14 @@ public class VP3300OnReceiverListener implements OnReceiverListener {
         //TODO is nontech fallback swipe handled ????
         if (idtemvData.msr_cardData != null && idtemvData.result == IDTEMVData.MSR_SUCCESS) {
             if(entryMode == EntryMode.FALLBACK_SWIPE) {
-                CardTokenizer cardTokenizer = new CardTokenizerImpl(vp3300Device);
+                CardTokenizer cardTokenizer = new CardTokenizerImpl(idTechCommonKernelDevice);
                 cardTokenizer.createTransactionTokenForFallback(idtemvData.msr_cardData);
             } else if(entryMode == EntryMode.SWIPE) {
                 swipeMSRData(idtemvData.msr_cardData);
             }
             //TODO test non tech fallback
         } else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == EntryMode.NONTECH_FALLBACK_SWIPE || entryMode == EntryMode.EMV)) {
-            CardTokenizer cardTokenizer = new CardTokenizerImpl(vp3300Device);
+            CardTokenizer cardTokenizer = new CardTokenizerImpl(idTechCommonKernelDevice);
             cardTokenizer.createTransactionToken(idtemvData);
         }
     }
@@ -193,25 +198,25 @@ public class VP3300OnReceiverListener implements OnReceiverListener {
         publicOnReceiverListener.lcdDisplay(0,message,0);
 
         //temp!!!
-        vp3300Device.setConfigured(true);
+        idTechCommonKernelDevice.setConfigured(true);
 
         configure();
     }
 
     private void configure() {
         //Grab this information only after connecting to avoid any 'busy' signals with the reader.
-        String previousDeviceSerialNumber = vp3300Device.getDeviceSerialNumber();
-        vp3300Device.setDeviceSerialNumber();
-        vp3300Device.setFirmwareVersion();
-        vp3300Device.setKernelVersion();
+        String previousDeviceSerialNumber = idTechCommonKernelDevice.getDeviceSerialNumber();
+        idTechCommonKernelDevice.setDeviceSerialNumber();
+        idTechCommonKernelDevice.setFirmwareVersion();
+        idTechCommonKernelDevice.setKernelVersion();
 
         //If they connect a different reader set the configure flag to false to force configuration.
-        if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(vp3300Device.getDeviceSerialNumber())) {
-            vp3300Device.setConfigured(false);
+        if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(idTechCommonKernelDevice.getDeviceSerialNumber())) {
+            idTechCommonKernelDevice.setConfigured(false);
         }
 
-        if(!vp3300Device.isConfigured()) {
-            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(vp3300Device);
+        if(!idTechCommonKernelDevice.isConfigured()) {
+            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(idTechCommonKernelDevice);
             clearentConfigurator.configure(createCommunicationRequest());
         } else {
             String[] readyMessage = {"VIVOpay configured and ready\n"};
@@ -220,9 +225,9 @@ public class VP3300OnReceiverListener implements OnReceiverListener {
     }
 
     private CommunicationRequest createCommunicationRequest() {
-        String kernelVersion = vp3300Device.getKernelVersion();
-        String deviceSerialNumber = vp3300Device.getDeviceSerialNumber();
-        return new CommunicationRequest(vp3300Device.getPaymentsBaseUrl(), vp3300Device.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
+        String kernelVersion = idTechCommonKernelDevice.getKernelVersion();
+        String deviceSerialNumber = idTechCommonKernelDevice.getDeviceSerialNumber();
+        return new CommunicationRequest(idTechCommonKernelDevice.getPaymentsBaseUrl(), idTechCommonKernelDevice.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
     }
 
     @Override

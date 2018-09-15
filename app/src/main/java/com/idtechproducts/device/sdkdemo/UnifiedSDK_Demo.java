@@ -11,9 +11,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import com.clearent.device.family.vivopay.vp3300.Clearent_VP3300;
+import com.clearent.device.family.DeviceFactory;
 import com.clearent.device.PublicOnReceiverListener;
-import com.clearent.device.family.vivopay.vp3300.VP3300Device;
+import com.clearent.device.family.IDTechCommonKernelDevice;
+import com.clearent.device.family.vivopay.vp3300.VP3300;
 import com.clearent.device.token.domain.TransactionToken;
 import com.dbconnection.dblibrarybeta.ProfileManager;
 import com.dbconnection.dblibrarybeta.ProfileUtility;
@@ -136,7 +137,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
     public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener, OnReceiverListenerPINRequest, FirmwareUpdateToolMsg, RESTResponse {
         private final long BLE_ScanTimeout = 5000; //in milliseconds
 
-        private VP3300Device device;
+        private VP3300 device;
         private FirmwareUpdateTool fwTool;
         private static final int REQUEST_ENABLE_BT = 1;
         private long totalEMVTime;
@@ -265,7 +266,13 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             if (device != null) {
                 releaseSDK();
             }
-            device = new Clearent_VP3300(this, this, getActivity(), "https://gateway-qa.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf");
+
+            //Default to audio jack. The demo is generic so it doesnt know what device you are coding against.
+            //The integrator isnt going to prompt the user for the type of device. They will probably configure the type or have it as a part of settings
+            //(an approach where the type is known ahead of time).
+            //the demo can still switch the type.
+            device = DeviceFactory.getVP3300(DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-qa.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf");
+
             profileManager.doGet();
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
             device.log_setVerboseLoggingEnable(true);
@@ -1174,10 +1181,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 CheckBox checkbox_comp = (CheckBox) dlgStartEMV.findViewById(R.id.checkbox_comp);
                                 checkbox_auth.setOnClickListener(onAuthCheckBoxClick);
                                 checkbox_auth.setChecked(true);
-                                Clearent_VP3300.emv_setAutoAuthenticateTransaction(true);
+                                device.emv_setAutoAuthenticateTransaction(true);
                                 checkbox_comp.setOnClickListener(onCompCheckBoxClick);
                                 checkbox_comp.setChecked(false);
-                                Clearent_VP3300.emv_setAutoCompleteTransaction(false);
+                                device.emv_setAutoCompleteTransaction(false);
                                 Button btnStartEMV = (Button) dlgStartEMV.findViewById(R.id.btnStartEMV);
                                 Button btnCancel = (Button) dlgStartEMV.findViewById(R.id.btnCancel);
                                 edtAmount = (EditText) dlgStartEMV.findViewById(R.id.edtAmount);
@@ -1291,8 +1298,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                 byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
 
-                Clearent_VP3300.emv_allowFallback(true);
-                if (Clearent_VP3300.emv_getAutoAuthenticateTransaction())
+                device.emv_allowFallback(true);
+                if (device.emv_getAutoAuthenticateTransaction())
                     return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, tags, false);
                 else
                     return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, null, false);
@@ -1305,7 +1312,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                     switch (v.getId()) {
                         case R.id.checkbox_auth:
-                            Clearent_VP3300.emv_setAutoAuthenticateTransaction(checked);
+                            device.emv_setAutoAuthenticateTransaction(checked);
                             break;
                     }
                 }
@@ -1318,7 +1325,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                     switch (v.getId()) {
                         case R.id.checkbox_comp:
-                            Clearent_VP3300.emv_setAutoCompleteTransaction(checked);
+                            device.emv_setAutoCompleteTransaction(checked);
                             break;
                     }
                 }

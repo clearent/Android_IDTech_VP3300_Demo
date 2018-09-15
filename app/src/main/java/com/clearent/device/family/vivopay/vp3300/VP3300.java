@@ -1,11 +1,5 @@
 package com.clearent.device.family.vivopay.vp3300;
 
-import com.clearent.device.Configurable;
-import com.clearent.device.HasDeviceMetadata;
-import com.clearent.device.HasServerCommunication;
-import com.clearent.device.HasSwipeSupport;
-import com.clearent.device.HasTokenizingSupport;
-import com.clearent.device.TransactionTokenNotifier;
 import com.idtechproducts.device.ICCReaderStatusStruct;
 import com.idtechproducts.device.IDTMSRData;
 import com.idtechproducts.device.ReaderInfo;
@@ -16,10 +10,9 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 import java.util.Map;
 
 /**
- * Main interface for the VP3300.
- * The majority of the methods are implemented by the IDT_Device class. See IDTech documentation.
+ * VP3300
  */
-public interface VP3300Device extends TransactionTokenNotifier, Configurable, HasServerCommunication, HasDeviceMetadata, HasTokenizingSupport, HasSwipeSupport {
+public interface VP3300 {
 
     boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType);
 
@@ -215,15 +208,14 @@ public interface VP3300Device extends TransactionTokenNotifier, Configurable, Ha
 
     int ctls_cancelTransaction();
 
-    void notifyFailure(String message);
+    void emv_allowFallback(boolean allow);
 
-    void setDeviceSerialNumber();
+    void emv_setAutoAuthenticateTransaction(boolean auto);
 
-    void setKernelVersion();
+    boolean emv_getAutoAuthenticateTransaction();
 
-    void setFirmwareVersion();
+    void emv_setAutoCompleteTransaction(boolean auto);
 
-    boolean isConfigured();
+    boolean emv_getAutoCompleteTransaction();
 
-    void setConfigured(boolean configured);
 }

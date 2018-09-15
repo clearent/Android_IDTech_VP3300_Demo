@@ -7,4 +7,11 @@ public interface HasDeviceMetadata {
     String getKernelVersion();
 
     String getFirmwareVersion();
+
+    void setDeviceSerialNumber();
+
+    void setFirmwareVersion();
+
+    void setKernelVersion();
+
 }
