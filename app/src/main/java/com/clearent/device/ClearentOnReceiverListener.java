@@ -142,7 +142,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             Log.i("INFO","Entry Mode is " + entryMode.name());
             setPreviousDipDidNotMatchOnApp(true);
             notify("SWIPE CARD");
-            idtDevice.msr_startMSRSwipe();
+            idtDevice.msr_startMSRSwipe(30);
             return;
         }
 

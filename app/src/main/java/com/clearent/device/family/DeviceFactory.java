@@ -35,6 +35,7 @@ public class DeviceFactory {
             case DEVICE_VP3300_BT:
                 VP3300 vP3300 = new VP3300Impl(publicOnReceiverListener, context, paymentsBaseUrl, paymentsPublicKey);
                 vP3300.device_setDeviceType(deviceType);
+                vP3300.emv_allowFallback(true);
                 return vP3300;
             default:
                 throw new RuntimeException("No VP3300 device found");
@@ -60,6 +61,7 @@ public class DeviceFactory {
             case DEVICE_VP3300_BT:
                 VP3300 vP3300 = new VP3300Impl(publicOnReceiverListener, callback2, context, paymentsBaseUrl, paymentsPublicKey);
                 vP3300.device_setDeviceType(deviceType);
+                vP3300.emv_allowFallback(true);
                 return vP3300;
             default:
                 throw new RuntimeException("No VP3300 device found");
