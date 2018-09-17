@@ -42,9 +42,18 @@ public class ClearentConfiguratorImpl implements ClearentConfigurator {
     }
 
     private void configureReader(CommunicationRequest communicationRequest) {
-        ClearentConfigFetcherResponseHandler clearentConfigFetcherResponseHandler = new ClearentConfigFetcherResponseHandler(configurable);
-        ClearentConfigFetcher clearentConfigFetcher = new ClearentConfigFetcherImpl(communicationRequest);
-        clearentConfigFetcher.fetchConfiguration(clearentConfigFetcherResponseHandler);
+        GetConfigurationTaskResponseHandler getConfigurationTaskResponseHandler = new GetConfigurationTaskResponseHandler(configurable);
+        fetchConfiguration(communicationRequest, getConfigurationTaskResponseHandler);
+    }
+
+    void fetchConfiguration(CommunicationRequest communicationRequest, final GetConfigurationTaskResponseHandler getConfigurationTaskResponseHandler) {
+        new GetConfigurationTask(communicationRequest, new GetConfigurationTask.AsyncResponse() {
+            @Override
+            public void processFinish(String output) {
+                Log.i("OUTPUT", output);
+                getConfigurationTaskResponseHandler.handleResponse(output);
+            }
+        }).execute();
     }
 
     private void setTerminalMajorConfiguration() {

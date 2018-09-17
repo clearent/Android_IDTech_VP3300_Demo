@@ -15,11 +15,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class ClearentConfigFetcherResponseHandler {
+public class GetConfigurationTaskResponseHandler {
 
     private Configurable configurable;
 
-    public ClearentConfigFetcherResponseHandler(Configurable configurable) {
+    public GetConfigurationTaskResponseHandler(Configurable configurable) {
         this.configurable = configurable;
     }
 

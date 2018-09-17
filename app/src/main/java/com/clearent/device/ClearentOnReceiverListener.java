@@ -203,7 +203,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         publicOnReceiverListener.lcdDisplay(0,message,0);
 
         //temp!!! I wanted to skip the configuration during development.
-        idtDevice.setConfigured(true);
+       // idtDevice.setConfigured(true);
 
         configure();
     }
