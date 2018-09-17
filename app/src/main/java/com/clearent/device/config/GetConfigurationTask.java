@@ -54,8 +54,7 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, ConfigurationRes
                 Gson gson = new Gson();
                 ConfigurationResponse configurationResponse = gson.fromJson(stringBuilder.toString(), ConfigurationResponse.class);
                 return configurationResponse;
-                ////had problems at home calling qa. so I used postman to get the json and worked with it locally
-                //TODO Consider a fallback similar to android device fallback ? or do we assert "If the internet is up our services are too ?"
+                //TODO Remove this at some point. had problems at home calling qa. so I used postman to get the json and worked with it locally
                 //return loadJSON();
             } catch (Exception e) {
                 Log.e("ERROR", GENERAL_ERROR, e);

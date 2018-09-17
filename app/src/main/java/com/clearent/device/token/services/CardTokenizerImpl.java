@@ -110,7 +110,8 @@ public class CardTokenizerImpl implements CardTokenizer {
         } else if (idtemvData.encryptedTags != null) {
             return createClearentTransactionTokenRequest(idtemvData.encryptedTags, true);
         } else if(idtemvData.msr_cardData != null) {
-            //TODO test is this a fallback ? is this even valid ? seems like this objet will always exist
+            //TODO test is this a fallback ? is this even valid ? seems like this object will always exist
+            hasTokenizingSupport.notifyTransactionTokenFailure("test 1");
             return createClearentTransactionTokenRequestForFallbackSwipe(idtemvData.msr_cardData);
         }
 

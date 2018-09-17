@@ -37,6 +37,11 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     @Override
     public void swipeMSRData(IDTMSRData idtmsrData) {
 
+        if(idtmsrData != null && idtmsrData.isCTLS) {
+            notify("CONTACTLESS NOT SUPPORTED");
+            return;
+        }
+
         if (idtmsrData == null || idtmsrData.result != ErrorCode.SUCCESS || idtmsrData.event != EVENT_MSR_CARD_DATA || (idtmsrData.track2 == null && idtmsrData.encTrack2 == null)) {
             notifyFailure("Invalid Swipe");
             return;
@@ -125,10 +130,10 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             return;
         }
 
-        if (idtemvData.result == IDTEMVData.MSR_CARD_ERROR) {
-            notify("INVALID SWIPE");
-            return;
-        }
+//        if (idtemvData.result == IDTEMVData.MSR_CARD_ERROR) {
+//            notify("INVALID SWIPE");
+//            return;
+//        }
 
         //TODO see if we should check for a fallback flag already set (see demo). useful if this class is reused for other families
         if(idtemvData.result == IDTEMVData.APP_NO_MATCHING) {
