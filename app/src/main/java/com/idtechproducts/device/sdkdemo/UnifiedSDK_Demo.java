@@ -13,7 +13,6 @@ import java.util.Set;
 
 import com.clearent.device.family.DeviceFactory;
 import com.clearent.device.PublicOnReceiverListener;
-import com.clearent.device.family.IDTechCommonKernelDevice;
 import com.clearent.device.family.vivopay.vp3300.VP3300;
 import com.clearent.device.token.domain.TransactionToken;
 import com.dbconnection.dblibrarybeta.ProfileManager;

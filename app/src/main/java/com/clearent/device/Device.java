@@ -2,16 +2,24 @@ package com.clearent.device;
 
 import android.util.Log;
 
-import com.clearent.device.family.IDTechCommonKernelDevice;
+import com.clearent.device.family.IDTDevice;
 import com.clearent.device.token.domain.TransactionToken;
+import com.idtechproducts.device.APDUResponseStruct;
+import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ErrorCodeInfo;
 import com.idtechproducts.device.ICCReaderStatusStruct;
+import com.idtechproducts.device.ICCSettingStruct;
 import com.idtechproducts.device.IDTMSRData;
 import com.idtechproducts.device.IDT_Device;
+import com.idtechproducts.device.MSRSettingStruct;
+import com.idtechproducts.device.OnReceiverListener;
+import com.idtechproducts.device.PowerOnStructure;
 import com.idtechproducts.device.ReaderInfo;
 import com.idtechproducts.device.ResDataStruct;
 import com.idtechproducts.device.StructConfigParameters;
+import com.idtechproducts.device.USBBypassListener;
+import com.idtechproducts.device.audiojack.tasks.TaskManager;
 import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
@@ -19,8 +27,11 @@ import java.util.Map;
 /**
  * This abstract class implements wrappers for all known methods to the IDT_Device.
  * It also has an abstract method requiring the implementor to provide the IDT_Device created for the specific IDT Device wrapper (ex- IDT_VP3300).
+ *
+ * The IDTech exposes a method called getSDKInstance allowing direct access to the IDT_Device. I can only speculate this was done just in case a method
+ * was not exposed correctly in each of its concrete implementations (ex IDT_VP3300, IDT_Augusta).
  */
-public abstract class Device implements IDTechCommonKernelDevice {
+public abstract class Device implements IDTDevice {
 
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
@@ -231,6 +242,11 @@ public abstract class Device implements IDTechCommonKernelDevice {
     @Override
     public int device_getFirmwareVersion(StringBuilder version) {
         return getSDKInstance().device_getFirmwareVersion(version);
+    }
+
+    @Override
+    public boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType) {
+        return false;
     }
 
     @Override
@@ -717,6 +733,1030 @@ public abstract class Device implements IDTechCommonKernelDevice {
     @Override
     public int ctls_cancelTransaction() {
         return getSDKInstance().ctls_cancelTransaction();
+    }
+
+    //start here
+
+
+    @Override
+    public void btle_WakeUp() {
+        getSDKInstance().btle_WakeUp();
+    }
+
+    @Override
+    public boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType, int PID) {
+        return getSDKInstance().device_setDeviceType(deviceType, PID);
+    }
+
+    @Override
+    public boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType, boolean isSRED) {
+        return getSDKInstance().device_setDeviceType(deviceType, isSRED);
+    }
+
+    @Override
+    public boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType, boolean isTTK, boolean isSRED) {
+        return getSDKInstance().device_setDeviceType(deviceType,  isTTK,  isSRED);
+    }
+
+    @Override
+    public boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType, boolean isTTK, boolean isSRED, boolean isThales) {
+        return getSDKInstance().device_setDeviceType( deviceType,  isTTK,  isSRED,  isThales);
+    }
+
+    @Override
+    public boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType, boolean isTTK, boolean isSRED, boolean isThales, int PID) {
+        return getSDKInstance().device_setDeviceType( deviceType,  isTTK,  isSRED,  isThales,  PID);
+    }
+
+    @Override
+    public int device_setDisplayReady() {
+        return getSDKInstance().device_setDisplayReady();
+    }
+
+    @Override
+    public String log_exportLogs() {
+        return getSDKInstance().log_exportLogs();
+    }
+
+    @Override
+    public void device_ConnectWithoutValidation(boolean noValidate, ReaderInfo.DEVICE_TYPE deviceType) {
+        getSDKInstance().device_ConnectWithoutValidation( noValidate,  deviceType);
+    }
+
+    @Override
+    public void device_disconnect() {
+        getSDKInstance().device_disconnect();
+    }
+
+    @Override
+    public boolean emv_getDisplayMessage(int timeout, long startTime, ResDataStruct resData) {
+        return getSDKInstance().emv_getDisplayMessage(timeout, startTime, resData);
+    }
+
+    @Override
+    public boolean msr_isSwipeCardRunning() {
+        return getSDKInstance().msr_isSwipeCardRunning();
+    }
+
+    @Override
+    public void setBypassListener(USBBypassListener callback) {
+         getSDKInstance().setBypassListener(callback);
+    }
+
+    @Override
+    public void clearBypassListener() {
+        getSDKInstance().clearBypassListener();
+    }
+
+    @Override
+    public void externalConnect() {
+         getSDKInstance().externalConnect();
+    }
+
+    @Override
+    public void externalDisconnect() {
+         getSDKInstance().externalDisconnect();
+    }
+
+    @Override
+    public void externalDeviceNotFound() {
+         getSDKInstance().externalDeviceNotFound();
+    }
+
+    @Override
+    public TaskManager.TaskStartRet sendAudioCommand_helper(String cmd, int timeout, ResDataStruct respData) {
+        return getSDKInstance().sendAudioCommand_helper( cmd,  timeout,  respData);
+    }
+
+    @Override
+    public byte[] getFirmwareVersionForTTK() {
+        return getSDKInstance().getFirmwareVersionForTTK();
+    }
+
+    @Override
+    public int device_controlBeep(int index, int frequency, int duration) {
+        return getSDKInstance().device_controlBeep( index,  frequency,  duration);
+    }
+
+    @Override
+    public int device_controlLED(byte indexLED, byte control, int intervalOn, int intervalOff) {
+        return getSDKInstance().device_controlLED( indexLED,  control,  intervalOn,  intervalOff);
+    }
+
+    @Override
+    public int device_controlLED_ICC(int controlMode, int interval) {
+        return getSDKInstance().device_controlLED_ICC( controlMode,  interval);
+    }
+
+    @Override
+    public int device_selfCheck() {
+        return getSDKInstance().device_selfCheck();
+    }
+
+    @Override
+    public int device_setBluetoothParameters(String name, byte[] oldPassword, byte[] newPassword) {
+        return getSDKInstance().device_setBluetoothParameters( name,  oldPassword, newPassword);
+    }
+
+    @Override
+    public int device_setSource(byte[] data) {
+        return getSDKInstance().device_setSource(data);
+    }
+
+    @Override
+    public int device_getSource(byte[] data) {
+        return getSDKInstance().device_getSource(data);
+    }
+
+    @Override
+    public int device_controlUserInterface(byte[] values) {
+        return getSDKInstance().device_controlUserInterface(values);
+    }
+
+    @Override
+    public int device_calibrateParameters(byte delta) {
+        return getSDKInstance().device_calibrateParameters(delta);
+    }
+
+    @Override
+    public int device_getDriveFreeSpace(StringBuilder freeSpace, StringBuilder usedSpace) {
+        return getSDKInstance().device_getDriveFreeSpace( freeSpace,  usedSpace);
+    }
+
+    @Override
+    public int device_listDirectory(String directoryName, boolean recursive, boolean onSD, StringBuilder directory) {
+        return getSDKInstance().device_listDirectory( directoryName,  recursive,  onSD,  directory);
+    }
+
+    @Override
+    public int device_createDirectory(String directoryName) {
+        return getSDKInstance().device_createDirectory( directoryName);
+    }
+
+    @Override
+    public int device_deleteDirectory(String directoryName) {
+        return getSDKInstance().device_deleteDirectory( directoryName);
+    }
+
+    @Override
+    public int device_deleteFile(String fileName) {
+        return getSDKInstance().device_deleteFile( fileName);
+    }
+
+    @Override
+    public int device_enhancedPassthrough(byte[] data) {
+        return getSDKInstance().device_enhancedPassthrough( data);
+    }
+
+    @Override
+    public int device_controlIndicator(byte indicator, boolean enable) {
+        return getSDKInstance().device_controlIndicator( indicator,  enable);
+    }
+
+    @Override
+    public int device_getKSN(byte keyNameIndex, byte[] keySlot, ResDataStruct resKSN) {
+        return getSDKInstance().device_getKSN( keyNameIndex, keySlot,  resKSN);
+    }
+
+    @Override
+    public int device_enableTDES(ResDataStruct respData) {
+        return getSDKInstance().device_enableTDES( respData);
+    }
+
+    @Override
+    public int device_enableAES(ResDataStruct respData) {
+        return getSDKInstance().device_enableAES( respData);
+    }
+
+    @Override
+    public int device_calibrateReader(ResDataStruct respData) {
+        return getSDKInstance().device_calibrateReader( respData);
+    }
+
+    @Override
+    public int device_enableErrorNotification(ResDataStruct respData, boolean enable) {
+        return getSDKInstance().device_enableErrorNotification( respData,  enable);
+    }
+
+    @Override
+    public int device_enableExpDate(ResDataStruct respData, boolean enable) {
+        return getSDKInstance().device_enableExpDate( respData,  enable);
+    }
+
+    @Override
+    public int device_enableForceEncryption(ResDataStruct respData, boolean enable) {
+        return getSDKInstance().device_enableForceEncryption( respData,  enable);
+    }
+
+    @Override
+    public int device_setDateTime(byte[] mac) {
+        return getSDKInstance().device_setDateTime( mac);
+    }
+
+    @Override
+    public int device_wakeup() {
+        return getSDKInstance().device_wakeup();
+    }
+
+    @Override
+    public int device_getKeyStatus(ResDataStruct respData) {
+        return getSDKInstance().device_getKeyStatus( respData);
+    }
+
+    @Override
+    public int device_getDRS(ResDataStruct respData) {
+        return getSDKInstance().device_getDRS(respData);
+    }
+
+    @Override
+    public int device_verifyBackdoorKey() {
+        return getSDKInstance().device_verifyBackdoorKey();
+    }
+
+    @Override
+    public void setfoundBlockedApplication(boolean found) {
+        getSDKInstance().setfoundBlockedApplication( found);
+    }
+
+    @Override
+    public boolean foundBlockedApplication() {
+        return getSDKInstance().foundBlockedApplication();
+    }
+
+    @Override
+    public int icc_getICCReaderStatus_LEDControl(ICCReaderStatusStruct ICCStatus, Common.EMV_TRANSACTION_STAGE transactionStage) {
+        return getSDKInstance().icc_getICCReaderStatus_LEDControl( ICCStatus,  transactionStage);
+    }
+
+    @Override
+    public int icc_powerOnICC(PowerOnStructure options, ResDataStruct atrPPS) {
+        return getSDKInstance().icc_powerOnICC( options,  atrPPS);
+    }
+
+    @Override
+    public int icc_getATR() {
+        return getSDKInstance().icc_getATR();
+    }
+
+    @Override
+    public int icc_powerOffICC() {
+        return getSDKInstance().icc_powerOffICC();
+    }
+
+    @Override
+    public int icc_passthroughOnICCforAPDU() {
+        return getSDKInstance().icc_passthroughOnICCforAPDU();
+    }
+
+    @Override
+    public int icc_passthroughOffICCforAPDU() {
+        return getSDKInstance().icc_passthroughOffICCforAPDU();
+    }
+
+    @Override
+    public int config_getDateTime(StringBuilder dateTime) {
+        return getSDKInstance().config_getDateTime( dateTime);
+    }
+
+    @Override
+    public int config_setLEDControl(byte MSRLedOption, byte ICCLedOption) {
+        return getSDKInstance().config_setLEDControl( MSRLedOption,  ICCLedOption);
+    }
+
+    @Override
+    public int config_setLEDController(boolean firmwareControlMSRLED, boolean firmwareControlICCLED) {
+        return getSDKInstance().config_setLEDController( firmwareControlMSRLED,  firmwareControlICCLED);
+    }
+
+    @Override
+    public int config_getLEDController(ResDataStruct respData) {
+        return getSDKInstance().config_getLEDController( respData);
+    }
+
+    @Override
+    public int config_setBeeperControl(byte BeeperOption) {
+        return getSDKInstance().config_setBeeperControl( BeeperOption);
+    }
+
+    @Override
+    public int config_setBeeperController(boolean firmwareControlBeeper) {
+        return getSDKInstance().config_setBeeperController( firmwareControlBeeper);
+    }
+
+    @Override
+    public int config_getBeeperControl(ResDataStruct respData) {
+        return getSDKInstance().config_getBeeperControl( respData);
+    }
+
+    @Override
+    public int config_beepersControl(int beeperIndex, int frequency, int duration) {
+        return getSDKInstance().config_beepersControl( beeperIndex,  frequency,  duration);
+    }
+
+    @Override
+    public int config_getEncryptionControl(ResDataStruct respData) {
+        return getSDKInstance().config_getEncryptionControl( respData);
+    }
+
+    @Override
+    public int config_setEncryptionControl(byte Encryption) {
+        return getSDKInstance().config_setEncryptionControl( Encryption);
+    }
+
+    @Override
+    public int config_setEncryptionControl(boolean msr, boolean icc) {
+        return getSDKInstance().config_setEncryptionControl( msr,  icc);
+    }
+
+    @Override
+    public int config_setBLEParameters(String url, String uid, String nameSpaceId, String instanceId) {
+        return getSDKInstance().config_setBLEParameters( url,  uid,  nameSpaceId,  instanceId);
+    }
+
+    @Override
+    public int config_setLongTermPrivateKey(byte[] encryptedKeyData, byte[] plainDataHash) {
+        return getSDKInstance().config_setLongTermPrivateKey( encryptedKeyData,  plainDataHash);
+    }
+
+    @Override
+    public int device_getBatteryVoltage(StringBuilder batteryInfo) {
+        return getSDKInstance().device_getBatteryVoltage( batteryInfo);
+    }
+
+    @Override
+    public int device_rebootDevice() {
+        return getSDKInstance().device_rebootDevice();
+    }
+
+    @Override
+    public int device_sendCommandDirectIO(String hexCommand, ResDataStruct respData) {
+        return getSDKInstance().device_sendCommandDirectIO( hexCommand,  respData);
+    }
+
+    @Override
+    public void cancelCurrentCommand() {
+         getSDKInstance().cancelCurrentCommand();
+    }
+
+    @Override
+    public int icc_exchangeAPDU(byte[] dataAPDU, APDUResponseStruct response) {
+        return getSDKInstance().icc_exchangeAPDU(dataAPDU,  response);
+    }
+
+    @Override
+    public int icc_exchangeEncryptedAPDU(byte[] dataAPDU, byte[] ksn, APDUResponseStruct response) {
+        return getSDKInstance().icc_exchangeEncryptedAPDU(dataAPDU, ksn,  response);
+    }
+
+    @Override
+    public int icc_exchangeMultiAPDU(byte[] dataAPDU, ResDataStruct respData) {
+        return getSDKInstance().icc_exchangeMultiAPDU( dataAPDU,  respData);
+    }
+
+    @Override
+    public int icc_getAPDU_KSN(ResDataStruct resKSN) {
+        return getSDKInstance().icc_getAPDU_KSN( resKSN);
+    }
+
+    @Override
+    public int icc_getAPDU_KSN(byte KeyNameIndex, byte[] KeySlot, ResDataStruct resKSN) {
+        return getSDKInstance().icc_getAPDU_KSN( KeyNameIndex,  KeySlot,  resKSN);
+    }
+
+    @Override
+    public int icc_setKeyTypeForICCDUKPT(byte encryption) {
+        return getSDKInstance().icc_setKeyTypeForICCDUKPT( encryption);
+    }
+
+    @Override
+    public int icc_getKeyTypeForICCDUKPT(ResDataStruct respData) {
+        return getSDKInstance().icc_getKeyTypeForICCDUKPT( respData);
+    }
+
+    @Override
+    public int icc_setKeyFormatForICCDUKPT(byte encryption) {
+        return getSDKInstance().icc_setKeyFormatForICCDUKPT( encryption);
+    }
+
+    @Override
+    public int icc_getKeyFormatForICCDUKPT(ResDataStruct respData) {
+        return getSDKInstance().icc_getKeyFormatForICCDUKPT( respData);
+    }
+
+    @Override
+    public int icc_enable(boolean withNotification) {
+        return getSDKInstance().icc_enable( withNotification);
+    }
+
+    @Override
+    public int icc_disable() {
+        return getSDKInstance().icc_disable();
+    }
+
+    @Override
+    public int icc_getFunctionStatus(ResDataStruct respData) {
+        return getSDKInstance().icc_getFunctionStatus( respData);
+    }
+
+    @Override
+    public int icc_enableNotification(boolean enableNotifyICCStatus) {
+        return getSDKInstance().icc_enableNotification( enableNotifyICCStatus);
+    }
+
+    @Override
+    public int icc_defaultSetting() {
+        return getSDKInstance().icc_defaultSetting();
+    }
+
+    @Override
+    public int icc_reviewAllSetting(ICCSettingStruct iccSetting) {
+        return getSDKInstance().icc_reviewAllSetting(iccSetting);
+    }
+
+    @Override
+    public int emv_removeAllApplicationData() {
+        return getSDKInstance().emv_removeAllApplicationData();
+    }
+
+    @Override
+    public int ctls_setGlobalConfiguration(byte[] TLV, ResDataStruct respData) {
+        return getSDKInstance().ctls_setGlobalConfiguration( TLV,  respData);
+    }
+
+    @Override
+    public int ctls_resetConfigurationGroup(int group) {
+        return getSDKInstance().ctls_resetConfigurationGroup( group);
+    }
+
+    @Override
+    public int ctls_displayOnlineAuthResult(boolean isOK, byte[] tlv) {
+        return getSDKInstance().ctls_displayOnlineAuthResult( isOK,  tlv);
+    }
+
+    @Override
+    public int emv_removeAllCAPK() {
+        return getSDKInstance().emv_removeAllCAPK();
+    }
+
+    @Override
+    public int emv_removeAllCRL() {
+        return getSDKInstance().emv_removeAllCRL();
+    }
+
+    @Override
+    public int emv_retrieveCRLStatus(ResDataStruct respData) {
+        return getSDKInstance().emv_retrieveCRLStatus( respData);
+    }
+
+    @Override
+    public int emv_retrieveExceptionList(ResDataStruct respData) {
+        return getSDKInstance().emv_retrieveExceptionList( respData);
+    }
+
+    @Override
+    public int emv_setException(byte[] exception) {
+        return getSDKInstance().emv_setException(exception);
+    }
+
+    @Override
+    public int emv_removeException(byte[] exception) {
+        return getSDKInstance().emv_removeException(exception);
+    }
+
+    @Override
+    public int emv_removeAllExceptions() {
+        return getSDKInstance().emv_removeAllExceptions();
+    }
+
+    @Override
+    public int emv_retrieveExceptionLogStatus(ResDataStruct respData) {
+        return getSDKInstance().emv_retrieveExceptionLogStatus( respData);
+    }
+
+    @Override
+    public int emv_removeTransactionLog() {
+        return getSDKInstance().emv_removeTransactionLog();
+    }
+
+    @Override
+    public int emv_retrieveTransactionLogStatus(ResDataStruct respData) {
+        return getSDKInstance().emv_retrieveTransactionLogStatus( respData);
+    }
+
+    @Override
+    public int emv_retrieveTransactionLog(ResDataStruct respData) {
+        return getSDKInstance().emv_retrieveTransactionLog( respData);
+    }
+
+    @Override
+    public int icc_removeCRLByRIDIndex(byte[] data, ResDataStruct respData) {
+        return getSDKInstance().icc_removeCRLByRIDIndex( data,  respData);
+    }
+
+    @Override
+    public int icc_getInterfaceDeviceSerialNumber(ResDataStruct respData) {
+        return getSDKInstance().icc_getInterfaceDeviceSerialNumber( respData);
+    }
+
+    @Override
+    public int icc_setInterfaceDeviceSerialNumber(byte[] data, ResDataStruct respData) {
+        return getSDKInstance().icc_setInterfaceDeviceSerialNumber( data,  respData);
+    }
+
+    @Override
+    public int icc_getTerminalId(ResDataStruct respData) {
+        return getSDKInstance().icc_getTerminalId(respData);
+    }
+
+    @Override
+    public int icc_setTerminalId(byte[] data, ResDataStruct respData) {
+        return getSDKInstance().icc_setTerminalId(data, respData);
+    }
+
+    @Override
+    public void waitForOtherCommands() {
+        getSDKInstance().waitForOtherCommands();
+    }
+
+    @Override
+    public void device_enableAutoPollEMV(boolean enabled, double amount, double amtOther, int type, int timeout, byte[] tags) {
+        getSDKInstance().device_enableAutoPollEMV( enabled,  amount,  amtOther,  type,  timeout,  tags);
+    }
+
+    @Override
+    public void emv_secondResponse(int timeout, int mode) {
+         getSDKInstance().emv_secondResponse( timeout,  mode);
+    }
+
+    @Override
+    public int emv_callbackResponseMSR(byte[] MSR) {
+        return getSDKInstance().emv_callbackResponseMSR( MSR);
+    }
+
+    @Override
+    public int device_setPMCStatus(byte[] idleSleepTime, ResDataStruct respData) {
+        return getSDKInstance().device_setPMCStatus(idleSleepTime,  respData)  ;
+
+    }
+
+    @Override
+    public int device_getPMCStatus(ResDataStruct respData) {
+        return getSDKInstance().device_getPMCStatus( respData);
+
+    }
+
+    @Override
+    public int device_shutOffPower(ResDataStruct respData) {
+        return getSDKInstance().device_shutOffPower( respData  );
+
+    }
+
+    @Override
+    public int msr_reviewAllSetting(MSRSettingStruct msrSetting) {
+        return getSDKInstance().msr_reviewAllSetting( msrSetting);
+
+    }
+
+    @Override
+    public int msr_reviewSecurityLevel(byte[] secSetting) {
+        return getSDKInstance().msr_reviewSecurityLevel( secSetting) ;
+
+    }
+
+    @Override
+    public int msr_setDecodingMethod(int method) {
+        return getSDKInstance().msr_setDecodingMethod( method);
+
+    }
+
+    @Override
+    public int msr_setKeyManagement(boolean fixed) {
+        return getSDKInstance().msr_setKeyManagement( fixed);
+    }
+
+    @Override
+    public int msr_selectMagneticTrack(int trackMode) {
+        return getSDKInstance().msr_selectMagneticTrack( trackMode) ;
+    }
+
+    @Override
+    public int msr_setTrackSeparator(int sep, String zz) {
+        return getSDKInstance().msr_setTrackSeparator( sep,  zz);
+    }
+
+    @Override
+    public int msr_setTerminator(int ter, String zz) {
+        return getSDKInstance().msr_setTerminator( ter,  zz) ;
+    }
+
+    @Override
+    public int msr_setTrackPrefix(int track, String zz) {
+        return getSDKInstance().msr_setTrackPrefix( track,  zz);
+    }
+
+    @Override
+    public int msr_setTrackSuffix(int track, String zz) {
+        return getSDKInstance().msr_setTrackSuffix( track,  zz);
+    }
+
+    @Override
+    public int msr_showTrackPrefixMessage(int track) {
+        return getSDKInstance().msr_showTrackPrefixMessage( track);
+    }
+
+    @Override
+    public int msr_showTrackSuffixMessage(int track) {
+        return getSDKInstance().msr_showTrackSuffixMessage( track);
+    }
+
+    @Override
+    public int msr_changeToDefault() {
+        return getSDKInstance().msr_changeToDefault();
+    }
+
+    @Override
+    public int msr_setPreamble(String zz) {
+        return getSDKInstance().msr_setPreamble(zz);
+    }
+
+    @Override
+    public int msr_setPostamble(String zz) {
+        return getSDKInstance().msr_setPostamble(zz);
+    }
+
+    @Override
+    public int ctls_startTransaction() {
+        return getSDKInstance().ctls_startTransaction();
+    }
+
+    @Override
+    public int msr_startTransaction(double amount, double amtOther, int type, int timeout, byte[] tags) {
+        return getSDKInstance().msr_startTransaction( amount,  amtOther,  type,  timeout,  tags);
+    }
+
+    @Override
+    public int msr_startMSRSwipeWithDisplay(String line1, String line2, String line3) {
+        return getSDKInstance().msr_startMSRSwipeWithDisplay( line1,  line2,  line3);
+    }
+
+    @Override
+    public int msr_setExpirationMask(boolean mask) {
+        return getSDKInstance().msr_setExpirationMask(mask);
+    }
+
+    @Override
+    public int msr_getExpirationMask(ResDataStruct respData) {
+        return getSDKInstance().msr_getExpirationMask( respData) ;
+    }
+
+    @Override
+    public int msr_setClearPANID(byte value) {
+        return getSDKInstance().msr_setClearPANID( value) ;
+    }
+
+    @Override
+    public int msr_getSwipeForcedEncryptionOption(ResDataStruct respData) {
+        return getSDKInstance().msr_getSwipeForcedEncryptionOption( respData);
+    }
+
+    @Override
+    public int msr_setSwipeForcedEncryptionOption(boolean track1, boolean track2, boolean track3, boolean track3card0) {
+        return getSDKInstance().msr_setSwipeForcedEncryptionOption( track1,  track2,  track3,  track3card0);
+    }
+
+    @Override
+    public int msr_getSwipeMaskOption(ResDataStruct respData) {
+        return getSDKInstance().msr_getSwipeMaskOption( respData);
+    }
+
+    @Override
+    public int msr_setSwipeMaskOption(boolean track1, boolean track2, boolean track3) {
+        return getSDKInstance().msr_setSwipeMaskOption( track1,  track2,  track3);
+    }
+
+    @Override
+    public int msr_getClearPANID(ResDataStruct respData) {
+        return getSDKInstance().msr_getClearPANID( respData);
+    }
+
+    @Override
+    public int msr_getSetting(byte setting, ResDataStruct respData) {
+        return getSDKInstance().msr_getSetting( setting,  respData);
+    }
+
+    @Override
+    public int msr_setSetting(byte setting, byte val) {
+        return getSDKInstance().msr_setSetting( setting,  val);
+    }
+
+    @Override
+    public int msr_setSetting(byte setting, byte[] val) {
+        return getSDKInstance().msr_setSetting( setting, val) ;
+    }
+
+    @Override
+    public int msr_setSwipeEncryption(byte encryption) {
+        return getSDKInstance().msr_setSwipeEncryption( encryption);
+    }
+
+    @Override
+    public int msr_getSwipeEncryption(ResDataStruct respData) {
+        return getSDKInstance().msr_getSwipeEncryption( respData);
+    }
+
+    @Override
+    public int msr_enableBufferMode(boolean isBufferMode, boolean withNotification) {
+        return getSDKInstance().msr_enableBufferMode( isBufferMode,  withNotification);
+    }
+
+    @Override
+    public int msr_disable() {
+        return getSDKInstance().msr_disable();
+    }
+
+    @Override
+    public int msr_setWhiteList(byte[] val) {
+        return getSDKInstance().msr_setWhiteList( val);
+    }
+
+    @Override
+    public int msr_RetrieveWhiteList(ResDataStruct respData) {
+        return getSDKInstance().msr_RetrieveWhiteList( respData) ;
+    }
+
+    @Override
+    public int msr_getFunctionStatus(ResDataStruct respData) {
+        return getSDKInstance().msr_getFunctionStatus( respData) ;
+    }
+
+    @Override
+    public int msr_flushTrackData() {
+        return getSDKInstance().msr_flushTrackData();
+    }
+
+    @Override
+    public int felica_authentication(byte[] key) {
+        return getSDKInstance().felica_authentication( key) ;
+    }
+
+    @Override
+    public int felica_readWithMac(int blockCnt, byte[] blockList, ResDataStruct respData) {
+        return getSDKInstance().felica_readWithMac( blockCnt, blockList,  respData );
+    }
+
+    @Override
+    public int felica_writeWithMac(byte blockNum, byte[] blockData) {
+        return getSDKInstance().felica_writeWithMac( blockNum, blockData);
+    }
+
+    @Override
+    public int felica_read(byte[] serviceCodeList, int blockCnt, byte[] blockList, ResDataStruct respData) {
+        return getSDKInstance().felica_read(serviceCodeList,  blockCnt, blockList,  respData);
+    }
+
+    @Override
+    public int felica_write(byte[] serviceCodeList, int blockCnt, byte[] blockList, byte[] blockData, ResDataStruct respData) {
+        return getSDKInstance().felica_write( serviceCodeList,  blockCnt, blockList, blockData,  respData);
+    }
+
+    @Override
+    public int felica_poll(byte[] systemCode, ResDataStruct respData) {
+        return getSDKInstance().felica_poll( systemCode,  respData);
+    }
+
+    @Override
+    public int felica_requestService(byte[] nodeCode, ResDataStruct respData) {
+        return getSDKInstance().felica_requestService( nodeCode,  respData);
+    }
+
+    @Override
+    public int pin_getEncryptedOnlinePIN(int keyType, int timeout) {
+        return getSDKInstance().pin_getEncryptedOnlinePIN( keyType,  timeout);
+    }
+
+    @Override
+    public int pin_getPAN(int getCSC, int timeout) {
+        return getSDKInstance().pin_getPAN( getCSC,  timeout);
+    }
+
+    @Override
+    public int pin_promptCreditDebit(byte currencySymbol, String displayAmount, int timeout, ResDataStruct respData) {
+        return getSDKInstance().pin_promptCreditDebit( currencySymbol,  displayAmount,  timeout,  respData );
+    }
+
+    @Override
+    public int ws_requestCSR(ResDataStruct respData) {
+        return getSDKInstance().ws_requestCSR( respData);
+    }
+
+    @Override
+    public int ws_loadSSLCert(String name, String dataDER) {
+        return getSDKInstance().ws_loadSSLCert( name,  dataDER) ;
+    }
+
+    @Override
+    public int ws_revokeSSLCert(String name) {
+        return getSDKInstance().ws_revokeSSLCert( name) ;
+    }
+
+    @Override
+    public int ws_deleteSSLCert(String name) {
+        return getSDKInstance().ws_deleteSSLCert( name);
+    }
+
+    @Override
+    public int ws_getCertChainType(ResDataStruct respData) {
+        return getSDKInstance().ws_getCertChainType( respData) ;
+    }
+
+    @Override
+    public int ws_updateRootCertificate(String name, String dataDER, String signature) {
+        return getSDKInstance().ws_updateRootCertificate( name,  dataDER,  signature) ;
+    }
+
+    @Override
+    public int pin_cancelPINEntry() {
+        return getSDKInstance().pin_cancelPINEntry();
+    }
+
+    @Override
+    public int pin_displayMessageGetEncryptedPIN(byte PANKeyType, byte[] PAN, byte PINMaxLen, byte PINMinLen, byte[] LCDMsg, ResDataStruct respData) {
+        return getSDKInstance().pin_displayMessageGetEncryptedPIN( PANKeyType,  PAN,  PINMaxLen,  PINMinLen,  LCDMsg,  respData) ;
+    }
+
+    @Override
+    public int pin_getFunctionKey(ResDataStruct respData) {
+        return getSDKInstance().pin_getFunctionKey( respData) ;
+    }
+
+    @Override
+    public int pin_displayMessageGetNumericKey(byte DisplayFlag, byte KeyMaxLen, byte KeyMinLen, byte[] TextDisplayMsg, byte[] DisplayMsgSig, ResDataStruct respData) {
+        return getSDKInstance().pin_displayMessageGetNumericKey( DisplayFlag,  KeyMaxLen,  KeyMinLen, TextDisplayMsg, DisplayMsgSig,  respData);
+    }
+
+    @Override
+    public int pin_displayMessageGetAmount(byte DisplayFlag, byte KeyMaxLen, byte KeyMinLen, byte[] TextDisplayMsg, byte[] DisplayMsgSig, ResDataStruct respData) {
+        return getSDKInstance().pin_displayMessageGetAmount( DisplayFlag,  KeyMaxLen,  KeyMinLen,  TextDisplayMsg,  DisplayMsgSig,  respData);
+    }
+
+    @Override
+    public int lcd_resetInitialState() {
+        return getSDKInstance().lcd_resetInitialState();
+    }
+
+    @Override
+    public int lcd_customDisplayMode(boolean enable) {
+        return getSDKInstance().lcd_customDisplayMode( enable);
+    }
+
+    @Override
+    public int lcd_setForeBackColor(byte[] foreRGB, byte[] backRGB) {
+        return getSDKInstance().lcd_setForeBackColor( foreRGB,  backRGB);
+    }
+
+    @Override
+    public int lcd_clearDisplay() {
+        return getSDKInstance().lcd_clearDisplay();
+    }
+
+    @Override
+    public int lcd_captureSignature(int timeout) {
+        return getSDKInstance().lcd_captureSignature( timeout) ;
+    }
+
+    @Override
+    public int lcd_startSlideShow(String files, int posX, int posY, int posMode, boolean touchEnable, boolean recursion, boolean touchTerminate, int delay, int loops, boolean clearScreen) {
+        return getSDKInstance().lcd_startSlideShow( files,  posX,  posY,  posMode,  touchEnable,  recursion,  touchTerminate,  delay,  loops,  clearScreen);
+    }
+
+    @Override
+    public int lcd_cancelSlideShow(ResDataStruct respData) {
+        return getSDKInstance().lcd_cancelSlideShow( respData) ;
+    }
+
+    @Override
+    public int lcd_setDisplayImage(String files, int posX, int posY, int posMode, boolean touchEnable, boolean clearScreen) {
+        return getSDKInstance().lcd_setDisplayImage( files,  posX,  posY,  posMode,  touchEnable,  clearScreen) ;
+    }
+
+    @Override
+    public int lcd_setBackgroundImage(String files, boolean enable) {
+        return getSDKInstance().lcd_setBackgroundImage( files,  enable) ;
+    }
+
+    @Override
+    public int lcd_displayText(int posX, int posY, int displayWidth, int displayHeight, int fontDesignation, int fontID, int screenPosition, String displayText, ResDataStruct respData) {
+        return getSDKInstance().lcd_displayText( posX,  posY,  displayWidth,  displayHeight,  fontDesignation,  fontID,  screenPosition,  displayText,  respData);
+    }
+
+    @Override
+    public int lcd_displayParagraph(int posX, int posY, int displayWidth, int displayHeight, int fontDesignation, int fontID, int displayProperties, String displayText) {
+        return getSDKInstance().lcd_displayParagraph( posX,  posY,  displayWidth,  displayHeight,  fontDesignation,  fontID,  displayProperties,  displayText);
+    }
+
+    @Override
+    public int lcd_displayButton(int posX, int posY, int buttonWidth, int buttonHeight, int fontDesignation, int fontID, int displayPosition, String buttonLabel, int buttonTextColorR, int buttonTextColorG, int buttonTextColorB, int buttonBackgroundColorR, int buttonBackgroundColorG, int buttonBackgroundColorB, ResDataStruct respData) {
+        return getSDKInstance().lcd_displayButton( posX,  posY,  buttonWidth,  buttonHeight,  fontDesignation,  fontID,  displayPosition,  buttonLabel,  buttonTextColorR,  buttonTextColorG,  buttonTextColorB,  buttonBackgroundColorR,  buttonBackgroundColorG,  buttonBackgroundColorB,  respData);
+    }
+
+    @Override
+    public int lcd_createList(int posX, int posY, int numOfColumns, int numOfRows, int fontDesignation, int fontID, boolean verticalScrollArrowsVisible, boolean borderedListItems, boolean borderdScrollArrows, boolean touchSensitive, boolean automaticScrolling, ResDataStruct respData) {
+        return getSDKInstance().lcd_createList( posX,  posY,  numOfColumns,  numOfRows,  fontDesignation,  fontID,  verticalScrollArrowsVisible,  borderedListItems,  borderdScrollArrows,  touchSensitive,  automaticScrolling,  respData);
+    }
+
+    @Override
+    public int lcd_addItemToList(byte[] listGraphicsID, String itemName, String itemID, boolean selected) {
+        return getSDKInstance().lcd_addItemToList(listGraphicsID,  itemName,  itemID,  selected) ;
+    }
+
+    @Override
+    public int lcd_getSelectedListItem(byte[] listGraphicsID, String itemID, ResDataStruct respData) {
+        return getSDKInstance().lcd_getSelectedListItem( listGraphicsID,  itemID,  respData);
+    }
+
+    @Override
+    public int lcd_clearEventQueue() {
+        return getSDKInstance().lcd_clearEventQueue();
+    }
+
+    @Override
+    public int lcd_getInputEvent(int timeout, ResDataStruct respData) {
+        return getSDKInstance().lcd_getInputEvent( timeout,  respData) ;
+    }
+
+    @Override
+    public int lcd_createInputField(byte[] specs, ResDataStruct respData) {
+        return getSDKInstance().lcd_createInputField(specs,  respData);
+    }
+
+    @Override
+    public int lcd_getInputFieldValue(byte[] listGraphicsID, ResDataStruct respData) {
+        return getSDKInstance().lcd_getInputFieldValue( listGraphicsID,  respData) ;
+    }
+
+    @Override
+    public void stopWaitingTask() {
+        getSDKInstance().stopWaitingTask();
+    }
+
+    @Override
+    public boolean setWaitingMSRResponseTimeout(int timeoutValue) {
+        return getSDKInstance().setWaitingMSRResponseTimeout( timeoutValue );
+    }
+
+    @Override
+    public boolean setWaitingExchangeAPDUResponseTimeout(int timeoutValue) {
+        return getSDKInstance().setWaitingExchangeAPDUResponseTimeout( timeoutValue);
+    }
+
+    @Override
+    public boolean setWaitingPINResponseTimeout(int timeoutValue) {
+        return getSDKInstance().setWaitingPINResponseTimeout( timeoutValue);
+    }
+
+    @Override
+    public void setEMVListener(OnReceiverListener callback) {
+        getSDKInstance().setEMVListener( callback) ;
+    }
+
+    @Override
+    public ReaderInfo.SupportStatus getSupportStatus(ReaderInfo.DEVICE_TYPE readerType) {
+        return getSDKInstance().getSupportStatus(readerType) ;
+    }
+
+    @Override
+    public Map<String, byte[]> getUniPayEncryptedTags() {
+        return getSDKInstance().getUniPayEncryptedTags();
+    }
+
+    @Override
+    public Map<String, byte[]> getUniPayMaskedTags() {
+        return getSDKInstance().getUniPayMaskedTags();
+    }
+
+    @Override
+    public void startUniPayEMV() {
+        getSDKInstance().startUniPayEMV();
+    }
+
+    @Override
+    public void completeUniPayEMV() {
+        getSDKInstance().completeUniPayEMV();
+    }
+
+    @Override
+    public void endUniPayEMV() {
+        getSDKInstance().endUniPayEMV();
+    }
+
+    @Override
+    public void setEncryptedUniPay(boolean isEncrypted) {
+        getSDKInstance().setEncryptedUniPay(isEncrypted);
+    }
+
+    @Override
+    public byte[] parseR_APDU(byte[] data) {
+        return getSDKInstance().parseR_APDU( data);
     }
 
 }

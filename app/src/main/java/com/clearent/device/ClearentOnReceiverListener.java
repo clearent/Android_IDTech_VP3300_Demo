@@ -7,7 +7,7 @@ import com.clearent.device.config.ClearentConfigurator;
 import com.clearent.device.config.ClearentConfiguratorImpl;
 import com.clearent.device.domain.CommunicationRequest;
 import com.clearent.device.domain.EntryMode;
-import com.clearent.device.family.IDTechCommonKernelDevice;
+import com.clearent.device.family.IDTDevice;
 import com.clearent.device.token.services.CardTokenizer;
 import com.clearent.device.token.services.CardTokenizerImpl;
 import com.idtechproducts.device.Common;
@@ -25,12 +25,12 @@ import static com.idtechproducts.device.ReaderInfo.EVENT_MSR_Types.EVENT_MSR_CAR
 
 public class ClearentOnReceiverListener implements OnReceiverListener {
 
-    private IDTechCommonKernelDevice idTechCommonKernelDevice;
+    private IDTDevice idtDevice;
     private PublicOnReceiverListener publicOnReceiverListener;
     private boolean previousDipDidNotMatchOnApp = false;
 
-    public ClearentOnReceiverListener(IDTechCommonKernelDevice idTechCommonKernelDevice, PublicOnReceiverListener publicOnReceiverListener) {
-        this.idTechCommonKernelDevice = idTechCommonKernelDevice;
+    public ClearentOnReceiverListener(IDTDevice idtDevice, PublicOnReceiverListener publicOnReceiverListener) {
+        this.idtDevice = idtDevice;
         this.publicOnReceiverListener = publicOnReceiverListener;
     }
 
@@ -42,7 +42,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             return;
         }
 
-        CardTokenizer cardTokenizer = new CardTokenizerImpl(idTechCommonKernelDevice);
+        CardTokenizer cardTokenizer = new CardTokenizerImpl(idtDevice);
 
         if(isPreviousDipDidNotMatchOnApp()) {
             setPreviousDipDidNotMatchOnApp(false);
@@ -137,7 +137,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
             Log.i("INFO","Entry Mode is " + entryMode.name());
             setPreviousDipDidNotMatchOnApp(true);
             notify("SWIPE CARD");
-            idTechCommonKernelDevice.msr_startMSRSwipe();
+            idtDevice.msr_startMSRSwipe();
             return;
         }
 
@@ -166,14 +166,19 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         //TODO is nontech fallback swipe handled ????
         if (idtemvData.msr_cardData != null && idtemvData.result == IDTEMVData.MSR_SUCCESS) {
             if(entryMode == EntryMode.FALLBACK_SWIPE) {
-                CardTokenizer cardTokenizer = new CardTokenizerImpl(idTechCommonKernelDevice);
+                Log.i("INFO","Trying fallback swipe...");
+                CardTokenizer cardTokenizer = new CardTokenizerImpl(idtDevice);
                 cardTokenizer.createTransactionTokenForFallback(idtemvData.msr_cardData);
             } else if(entryMode == EntryMode.SWIPE) {
+                Log.i("INFO","Trying swipe from emv method...");
                 swipeMSRData(idtemvData.msr_cardData);
             }
             //TODO test non tech fallback
-        } else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == EntryMode.NONTECH_FALLBACK_SWIPE || entryMode == EntryMode.EMV)) {
-            CardTokenizer cardTokenizer = new CardTokenizerImpl(idTechCommonKernelDevice);
+        } else if (idtemvData.result == IDTEMVData.GO_ONLINE) {
+            //TODo test the ios side that has this logic..are we sending dup requests ?
+        //} else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == EntryMode.NONTECH_FALLBACK_SWIPE || entryMode == EntryMode.EMV)) {
+            Log.i("INFO","Trying to go online...");
+            CardTokenizer cardTokenizer = new CardTokenizerImpl(idtDevice);
             cardTokenizer.createTransactionToken(idtemvData);
         }
     }
@@ -197,26 +202,26 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         String[] message = {"VIVOpay connected. Waiting for configuration to complete...\n"};
         publicOnReceiverListener.lcdDisplay(0,message,0);
 
-        //temp!!!
-        idTechCommonKernelDevice.setConfigured(true);
+        //temp!!! I wanted to skip the configuration during development.
+        idtDevice.setConfigured(true);
 
         configure();
     }
 
     private void configure() {
         //Grab this information only after connecting to avoid any 'busy' signals with the reader.
-        String previousDeviceSerialNumber = idTechCommonKernelDevice.getDeviceSerialNumber();
-        idTechCommonKernelDevice.setDeviceSerialNumber();
-        idTechCommonKernelDevice.setFirmwareVersion();
-        idTechCommonKernelDevice.setKernelVersion();
+        String previousDeviceSerialNumber = idtDevice.getDeviceSerialNumber();
+        idtDevice.setDeviceSerialNumber();
+        idtDevice.setFirmwareVersion();
+        idtDevice.setKernelVersion();
 
         //If they connect a different reader set the configure flag to false to force configuration.
-        if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(idTechCommonKernelDevice.getDeviceSerialNumber())) {
-            idTechCommonKernelDevice.setConfigured(false);
+        if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(idtDevice.getDeviceSerialNumber())) {
+            idtDevice.setConfigured(false);
         }
 
-        if(!idTechCommonKernelDevice.isConfigured()) {
-            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(idTechCommonKernelDevice);
+        if(!idtDevice.isConfigured()) {
+            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(idtDevice);
             clearentConfigurator.configure(createCommunicationRequest());
         } else {
             String[] readyMessage = {"VIVOpay configured and ready\n"};
@@ -225,9 +230,9 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
     }
 
     private CommunicationRequest createCommunicationRequest() {
-        String kernelVersion = idTechCommonKernelDevice.getKernelVersion();
-        String deviceSerialNumber = idTechCommonKernelDevice.getDeviceSerialNumber();
-        return new CommunicationRequest(idTechCommonKernelDevice.getPaymentsBaseUrl(), idTechCommonKernelDevice.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
+        String kernelVersion = idtDevice.getKernelVersion();
+        String deviceSerialNumber = idtDevice.getDeviceSerialNumber();
+        return new CommunicationRequest(idtDevice.getPaymentsBaseUrl(), idtDevice.getPaymentsPublicKey(), deviceSerialNumber, kernelVersion);
     }
 
     @Override
