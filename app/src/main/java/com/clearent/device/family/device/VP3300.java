@@ -1,4 +1,4 @@
-package com.clearent.device.family.vivopay.vp3300;
+package com.clearent.device.family.device;
 
 import com.idtechproducts.device.ICCReaderStatusStruct;
 import com.idtechproducts.device.IDTMSRData;

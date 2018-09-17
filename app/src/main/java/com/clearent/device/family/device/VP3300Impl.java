@@ -1,9 +1,10 @@
-package com.clearent.device.family.vivopay.vp3300;
+package com.clearent.device.family.device;
 
 import android.content.Context;
 
 import com.clearent.device.Device;
 import com.clearent.device.PublicOnReceiverListener;
+import com.clearent.device.family.device.VP3300;
 import com.idtechproducts.device.IDT_Device;
 import com.idtechproducts.device.IDT_VP3300;
 import com.idtechproducts.device.OnReceiverListenerPINRequest;

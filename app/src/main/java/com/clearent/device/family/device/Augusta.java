@@ -1,4 +1,4 @@
-package com.clearent.device.family.augusta;
+package com.clearent.device.family.device;
 
 import com.idtechproducts.device.APDUResponseStruct;
 import com.idtechproducts.device.ICCReaderStatusStruct;

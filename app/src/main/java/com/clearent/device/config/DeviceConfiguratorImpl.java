@@ -11,11 +11,11 @@ import com.idtechproducts.device.ResDataStruct;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class ClearentConfiguratorImpl implements ClearentConfigurator {
+public class DeviceConfiguratorImpl implements DeviceConfigurator {
 
     private Configurable configurable;
 
-    public ClearentConfiguratorImpl(Configurable configurable) {
+    public DeviceConfiguratorImpl(Configurable configurable) {
         this.configurable = configurable;
     }
 

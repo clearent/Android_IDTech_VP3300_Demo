@@ -6,7 +6,7 @@ import com.idtechproducts.device.StructConfigParameters;
 /**
  * PublicOnReceiverListener
  *
- * Implement this interface so device can communicate with you.
+ * Implement this interface so the device can communicate with you.
  */
 public interface PublicOnReceiverListener {
 

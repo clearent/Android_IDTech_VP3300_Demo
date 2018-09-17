@@ -2,12 +2,11 @@ package com.clearent.device.family;
 
 import android.content.Context;
 
-import com.clearent.device.Device;
 import com.clearent.device.PublicOnReceiverListener;
-import com.clearent.device.family.augusta.Augusta;
-import com.clearent.device.family.augusta.AugustaImpl;
-import com.clearent.device.family.vivopay.vp3300.VP3300;
-import com.clearent.device.family.vivopay.vp3300.VP3300Impl;
+import com.clearent.device.family.device.Augusta;
+import com.clearent.device.family.device.AugustaImpl;
+import com.clearent.device.family.device.VP3300;
+import com.clearent.device.family.device.VP3300Impl;
 import com.idtechproducts.device.OnReceiverListenerPINRequest;
 import com.idtechproducts.device.ReaderInfo;
 

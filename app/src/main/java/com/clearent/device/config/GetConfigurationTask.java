@@ -53,20 +53,25 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
                 //TODO Consider a fallback similar to android device fallback ? or do we assert "If the internet is up our services are too ?"
                 //return loadJSON();
             } catch (Exception e) {
+                //TODO handle error
                 Log.e("ERROR", e.getMessage(), e);
                 return null;
             }
         } catch (MalformedURLException e) {
+            //TODO handle error
             e.printStackTrace();
         } catch (IOException e) {
+            //TODO handle error
             e.printStackTrace();
         }
+        //TODO return ?
         return null;
     }
 
     @Override
     protected void onPostExecute(String response) {
         if (response == null) {
+            //TODO handle error
             response = "THERE WAS AN ERROR";
         }
         Log.i("INFO", response);

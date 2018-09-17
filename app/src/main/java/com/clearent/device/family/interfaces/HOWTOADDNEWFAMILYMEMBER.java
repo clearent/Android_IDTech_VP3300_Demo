@@ -33,9 +33,6 @@ package com.clearent.device.family.interfaces;
  * 6 - use the IDE to implement any methods that are not in IDTDevice.
  * 7 - change the implementation of these methods to reference the getSDKInstance().
  *
- *
- * I went ahead and put augusta into its own package but they could probably just be all dropped into a device package. (so family.device)
- *
  */
 public class HOWTOADDNEWFAMILYMEMBER {
 

@@ -3,8 +3,8 @@ package com.clearent.device;
 
 import android.util.Log;
 
-import com.clearent.device.config.ClearentConfigurator;
-import com.clearent.device.config.ClearentConfiguratorImpl;
+import com.clearent.device.config.DeviceConfigurator;
+import com.clearent.device.config.DeviceConfiguratorImpl;
 import com.clearent.device.domain.CommunicationRequest;
 import com.clearent.device.domain.EntryMode;
 import com.clearent.device.family.IDTDevice;
@@ -221,8 +221,8 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         }
 
         if(!idtDevice.isConfigured()) {
-            ClearentConfigurator clearentConfigurator = new ClearentConfiguratorImpl(idtDevice);
-            clearentConfigurator.configure(createCommunicationRequest());
+            DeviceConfigurator deviceConfigurator = new DeviceConfiguratorImpl(idtDevice);
+            deviceConfigurator.configure(createCommunicationRequest());
         } else {
             String[] readyMessage = {"VIVOpay configured and ready\n"};
             publicOnReceiverListener.lcdDisplay(0, readyMessage, 0);

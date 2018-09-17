@@ -1,15 +1,15 @@
-package com.clearent.device.family.augusta;
+package com.clearent.device.family.device;
 
 import android.content.Context;
 
 import com.clearent.device.Device;
 import com.clearent.device.PublicOnReceiverListener;
+import com.clearent.device.family.device.Augusta;
 import com.idtechproducts.device.APDUResponseStruct;
 import com.idtechproducts.device.ICCSettingStruct;
 import com.idtechproducts.device.IDT_Augusta;
 import com.idtechproducts.device.IDT_Device;
 import com.idtechproducts.device.MSRSettingStruct;
-import com.idtechproducts.device.OnReceiverListener;
 import com.idtechproducts.device.ReaderInfo;
 import com.idtechproducts.device.ResDataStruct;
 
