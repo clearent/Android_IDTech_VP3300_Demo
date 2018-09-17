@@ -4,7 +4,6 @@ import com.google.gson.annotations.SerializedName;
 
 public class MobileDevicePayload {
 
-
     @SerializedName("mobile-device")
     MobileDevice mobileDevice;
 
@@ -17,5 +16,12 @@ public class MobileDevicePayload {
 
     public void setMobileDevice(MobileDevice mobileDevice) {
         this.mobileDevice = mobileDevice;
+    }
+
+    @Override
+    public String toString() {
+        return "MobileDevicePayload{" +
+                "mobileDevice=" + mobileDevice +
+                '}';
     }
 }

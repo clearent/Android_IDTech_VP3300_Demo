@@ -17,25 +17,34 @@ import java.util.Map;
 
 public class GetConfigurationTaskResponseHandler {
 
+    private static final String GENERAL_ERROR = "VIVOpay failed to retrieve configuration. Confirm internet access, then reconnect reader.";
+
     private Configurable configurable;
 
     public GetConfigurationTaskResponseHandler(Configurable configurable) {
         this.configurable = configurable;
     }
 
-    public void handleResponse(String json) {
-        if(json == null) {
+    public void handleResponse(ConfigurationResponse configurationResponse) {
+        if(configurationResponse == null
+                || configurationResponse.getMobileDevicePayload() == null
+                || configurationResponse.getMobileDevicePayload().getMobileDevice() == null
+                || configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids() == null
+                || configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys() == null
+                || configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys().size() == 0
+                || configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids().size() == 0
+                || configurationResponse.getMobileDevicePayload().getMobileDevice() == null) {
             notifyGeneralFailure();
+            return;
         }
-        Gson gson = new Gson();
+
         try {
-            ConfigurationResponse configurationResponse = gson.fromJson(json, ConfigurationResponse.class);
             configureAids(configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids());
             configureCaPublicKeys(configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys());
             configurable.notifyReaderIsReady();
         } catch (Exception e) {
             Log.e("ERROR","Failed to process configuration", e);
-            notifyFailure("Failed to process configuration");
+            notifyFailure(GENERAL_ERROR);
         }
     }
 
@@ -115,6 +124,6 @@ public class GetConfigurationTaskResponseHandler {
     }
 
     private void notifyGeneralFailure() {
-        configurable.notifyConfigurationFailure("VIVOpay failed to retrieve configuration");
+        configurable.notifyConfigurationFailure(GENERAL_ERROR);
     }
 }

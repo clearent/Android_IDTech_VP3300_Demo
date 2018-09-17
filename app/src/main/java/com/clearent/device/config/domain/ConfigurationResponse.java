@@ -18,4 +18,11 @@ public class ConfigurationResponse {
     public void setMobileDevicePayload(MobileDevicePayload mobileDevicePayload) {
         this.mobileDevicePayload = mobileDevicePayload;
     }
+
+    @Override
+    public String toString() {
+        return "ConfigurationResponse{" +
+                "mobileDevicePayload=" + mobileDevicePayload +
+                '}';
+    }
 }

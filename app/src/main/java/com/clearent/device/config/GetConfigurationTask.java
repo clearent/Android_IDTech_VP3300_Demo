@@ -4,21 +4,24 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.clearent.device.config.domain.ConfigurationResponse;
 import com.clearent.device.domain.CommunicationRequest;
+import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
+public class GetConfigurationTask extends AsyncTask<Void, Void, ConfigurationResponse> {
+
+    private static final String GENERAL_ERROR = "VIVOpay failed to retrieve configuration. Confirm internet access, then reconnect reader.";
 
     public interface AsyncResponse {
-        void processFinish(String output);
+        void processFinish(ConfigurationResponse output);
     }
 
     private static final String RELATIVE_PATH = "/rest/v2/mobile/devices";
@@ -33,7 +36,7 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
     }
 
     @Override
-    protected String doInBackground(Void... voids) {
+    protected ConfigurationResponse doInBackground(Void... voids) {
         try {
             String encodedKernelVersion = Uri.encode(communicationRequest.getKernelVersion());
             URL url = new URL(communicationRequest.getBaseUrl() + RELATIVE_PATH + "/" + communicationRequest.getDeviceSerialNumber() + "/" + encodedKernelVersion);
@@ -48,33 +51,23 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, String> {
                     stringBuilder.append(line).append("\n");
                 }
                 bufferedReader.close();
-                return stringBuilder.toString();
+                Gson gson = new Gson();
+                ConfigurationResponse configurationResponse = gson.fromJson(stringBuilder.toString(), ConfigurationResponse.class);
+                return configurationResponse;
                 ////had problems at home calling qa. so I used postman to get the json and worked with it locally
                 //TODO Consider a fallback similar to android device fallback ? or do we assert "If the internet is up our services are too ?"
                 //return loadJSON();
             } catch (Exception e) {
-                //TODO handle error
-                Log.e("ERROR", e.getMessage(), e);
-                return null;
+                Log.e("ERROR", GENERAL_ERROR, e);
             }
-        } catch (MalformedURLException e) {
-            //TODO handle error
-            e.printStackTrace();
-        } catch (IOException e) {
-            //TODO handle error
-            e.printStackTrace();
+        } catch (Exception e) {
+            Log.e("ERROR", GENERAL_ERROR,e);
         }
-        //TODO return ?
-        return null;
+        return new ConfigurationResponse();
     }
 
     @Override
-    protected void onPostExecute(String response) {
-        if (response == null) {
-            //TODO handle error
-            response = "THERE WAS AN ERROR";
-        }
-        Log.i("INFO", response);
+    protected void onPostExecute(ConfigurationResponse response) {
         delegate.processFinish(response);
     }
 

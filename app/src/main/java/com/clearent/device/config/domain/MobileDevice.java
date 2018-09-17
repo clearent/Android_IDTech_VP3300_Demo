@@ -40,4 +40,13 @@ public class MobileDevice {
     public void setCaPublicKeys(List<CaPublicKey> caPublicKeys) {
         this.caPublicKeys = caPublicKeys;
     }
+
+    @Override
+    public String toString() {
+        return "MobileDevice{" +
+                "contactAids=" + contactAids +
+                ", contactlessAids=" + contactlessAids +
+                ", caPublicKeys=" + caPublicKeys +
+                '}';
+    }
 }

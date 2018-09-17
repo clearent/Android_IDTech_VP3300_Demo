@@ -3,6 +3,7 @@ package com.clearent.device.config;
 import android.util.Log;
 
 import com.clearent.device.Configurable;
+import com.clearent.device.config.domain.ConfigurationResponse;
 import com.clearent.device.domain.CommunicationRequest;
 import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
@@ -49,9 +50,8 @@ public class DeviceConfiguratorImpl implements DeviceConfigurator {
     void fetchConfiguration(CommunicationRequest communicationRequest, final GetConfigurationTaskResponseHandler getConfigurationTaskResponseHandler) {
         new GetConfigurationTask(communicationRequest, new GetConfigurationTask.AsyncResponse() {
             @Override
-            public void processFinish(String output) {
-                Log.i("OUTPUT", output);
-                getConfigurationTaskResponseHandler.handleResponse(output);
+            public void processFinish(ConfigurationResponse getConfigurationResponse) {
+                getConfigurationTaskResponseHandler.handleResponse(getConfigurationResponse);
             }
         }).execute();
     }
