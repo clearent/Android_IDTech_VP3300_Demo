@@ -5,17 +5,20 @@ import android.content.Context;
 import com.clearent.device.PublicOnReceiverListener;
 import com.clearent.device.family.device.Augusta;
 import com.clearent.device.family.device.AugustaImpl;
+import com.clearent.device.family.device.IDTNeo2;
+import com.clearent.device.family.device.IDTNeo2Impl;
 import com.clearent.device.family.device.VP3300;
 import com.clearent.device.family.device.VP3300Impl;
 import com.clearent.device.family.device.VP8800;
 import com.clearent.device.family.device.VP8800Impl;
+import com.idtechproducts.device.OnReceiverListenerPIN;
 import com.idtechproducts.device.OnReceiverListenerPINRequest;
 import com.idtechproducts.device.ReaderInfo;
 
 import static com.idtechproducts.device.ReaderInfo.DEVICE_TYPE.DEVICE_AUGUSTA;
 
 /**
- * This factory returns wrappers of IDTech concrete implementations per device.
+ * Use this factory to get an object to use for your device.
  */
 public class DeviceFactory {
 
@@ -84,7 +87,7 @@ public class DeviceFactory {
      */
     public static Augusta getAugusta(PublicOnReceiverListener publicOnReceiverListener, Context context, boolean isTTK, boolean isSRED, boolean isThales, String paymentsBaseUrl, String paymentsPublicKey) {
         Augusta augusta = new AugustaImpl(publicOnReceiverListener, context, isTTK, isSRED, isThales, paymentsBaseUrl, paymentsPublicKey);
-        augusta.device_setDeviceType(DEVICE_AUGUSTA, isTTK,isSRED,isThales);
+        augusta.device_setDeviceType(DEVICE_AUGUSTA, isTTK, isSRED, isThales);
         return augusta;
     }
 
@@ -113,4 +116,19 @@ public class DeviceFactory {
     public static VP8800 getVP8800(PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
         return new VP8800Impl(publicOnReceiverListener, context, paymentsBaseUrl, paymentsPublicKey);
     }
+
+    /**
+     * getVP8800 Use this method to get an object to interact with a VP8800 device.
+     *
+     * @param publicOnReceiverListener implement this interface allowing the device to communicate back.
+     * @param callback2                implement this interface allowing the device to communicate back to you for pin requests.
+     * @param context                  Provide the android context.
+     * @param paymentsBaseUrl          Clearent requires a base url so the library can communicate with its servers ex- https://gateway.clearent.net
+     * @param paymentsPublicKey        Clearent requires a public key to communicate with its servers.
+     * @return Augusta object
+     */
+    public static IDTNeo2 getVP3600(PublicOnReceiverListener publicOnReceiverListener, OnReceiverListenerPIN callback2, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
+        return new IDTNeo2Impl(publicOnReceiverListener, callback2, context, paymentsBaseUrl, paymentsPublicKey);
+    }
+
 }
