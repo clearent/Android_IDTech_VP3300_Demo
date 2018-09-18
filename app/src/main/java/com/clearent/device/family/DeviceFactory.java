@@ -7,6 +7,8 @@ import com.clearent.device.family.device.Augusta;
 import com.clearent.device.family.device.AugustaImpl;
 import com.clearent.device.family.device.VP3300;
 import com.clearent.device.family.device.VP3300Impl;
+import com.clearent.device.family.device.VP8800;
+import com.clearent.device.family.device.VP8800Impl;
 import com.idtechproducts.device.OnReceiverListenerPINRequest;
 import com.idtechproducts.device.ReaderInfo;
 
@@ -71,7 +73,7 @@ public class DeviceFactory {
     /**
      * getAugusta Use this method to get an object to interact with an Augusta device.
      *
-     * @param publicOnReceiverListener implement this interface allowing the device to communicate back to you.
+     * @param publicOnReceiverListener implement this interface allowing the device to communicate back.
      * @param context                  Provide the android context.
      * @param isTTK
      * @param isSRED
@@ -89,7 +91,7 @@ public class DeviceFactory {
     /**
      * getAugusta Use this method to get an object to interact with an Augusta device.
      *
-     * @param publicOnReceiverListener implement this interface allowing the device to communicate back to you.
+     * @param publicOnReceiverListener implement this interface allowing the device to communicate back.
      * @param context                  Provide the android context.
      * @param paymentsBaseUrl          Clearent requires a base url so the library can communicate with its servers ex- https://gateway.clearent.net
      * @param paymentsPublicKey        Clearent requires a public key to communicate with its servers.
@@ -97,5 +99,18 @@ public class DeviceFactory {
      */
     public static Augusta getAugusta(PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
         return new AugustaImpl(publicOnReceiverListener, context, paymentsBaseUrl, paymentsPublicKey);
+    }
+
+    /**
+     * getVP8800 Use this method to get an object to interact with a VP8800 device.
+     *
+     * @param publicOnReceiverListener implement this interface allowing the device to communicate back.
+     * @param context                  Provide the android context.
+     * @param paymentsBaseUrl          Clearent requires a base url so the library can communicate with its servers ex- https://gateway.clearent.net
+     * @param paymentsPublicKey        Clearent requires a public key to communicate with its servers.
+     * @return Augusta object
+     */
+    public static VP8800 getVP8800(PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
+        return new VP8800Impl(publicOnReceiverListener, context, paymentsBaseUrl, paymentsPublicKey);
     }
 }
