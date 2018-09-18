@@ -28,7 +28,7 @@ import java.util.Map;
  * This abstract class implements wrappers for all known methods to the IDT_Device.
  * It also has an abstract method requiring the implementor to provide the IDT_Device created for the specific IDT Device wrapper (ex- IDT_VP3300).
  *
- * The IDTech exposes a method called getSDKInstance allowing direct access to the IDT_Device. I can only speculate this was done just in case a method
+ * IDTech exposes a method called getSDKInstance allowing direct access to the IDT_Device. I can only speculate this was done just in case a method
  * was not exposed correctly in each of its concrete implementations (ex IDT_VP3300, IDT_Augusta).
  */
 public abstract class Device implements IDTDevice {
@@ -225,6 +225,7 @@ public abstract class Device implements IDTDevice {
 
     @Override
     public int device_startTransaction(double amount, double amtOther, int type, int timeout, byte[] tags) {
+        getClearentOnReceiverListener().reset();
         return getSDKInstance().device_startTransaction(amount, amtOther, type, timeout, tags);
     }
 
@@ -258,7 +259,6 @@ public abstract class Device implements IDTDevice {
     public int config_getSerialNumber(StringBuilder serialNumber) {
         return getSDKInstance().config_getSerialNumber(serialNumber);
     }
-
 
     @Override
     public void setIDT_Device(FirmwareUpdateTool fwTool) {

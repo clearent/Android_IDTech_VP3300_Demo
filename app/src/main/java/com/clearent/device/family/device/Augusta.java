@@ -12,6 +12,7 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
+//TODO Add Swagger
 public interface Augusta {
 
     boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType, boolean isTTK, boolean isSRED, boolean isThales);

@@ -14,6 +14,7 @@ import java.util.Date;
 
 public class DeviceConfiguratorImpl implements DeviceConfigurator {
 
+    private static final String DEFAULT_TERMINAL_TAGS = "5f3601029f1a0208409f3501219f33036028c89f4005f000f0a0019f1e085465726d696e616c9f150212349f160f3030303030303030303030303030309f1c0838373635343332319f4e2231303732312057616c6b65722053742e20437970726573732c204341202c5553412edf260101df1008656e667265737a68df110100df270100dfee150101dfee160100dfee170105dfee180180dfee1e08d09c20d0c41e1400dfee1f0180dfee1b083030303130353030dfee20013cdfee21010adfee2203323c3c";
     private Configurable configurable;
 
     public DeviceConfiguratorImpl(Configurable configurable) {
@@ -29,8 +30,7 @@ public class DeviceConfiguratorImpl implements DeviceConfigurator {
     }
 
     private void setDefaultTerminalTags() {
-        String defaultTerminalTags = "5f3601029f1a0208409f3501219f33036028c89f4005f000f0a0019f1e085465726d696e616c9f150212349f160f3030303030303030303030303030309f1c0838373635343332319f4e2231303732312057616c6b65722053742e20437970726573732c204341202c5553412edf260101df1008656e667265737a68df110100df270100dfee150101dfee160100dfee170105dfee180180dfee1e08d09c20d0c41e1400dfee1f0180dfee1b083030303130353030dfee20013cdfee21010adfee2203323c3c";
-        String upperCaseTlv = defaultTerminalTags.toUpperCase();
+        String upperCaseTlv = DEFAULT_TERMINAL_TAGS.toUpperCase();
         ResDataStruct resDatStruct = new ResDataStruct();
         byte[] tlvBytes = Common.getBytesFromHexString(upperCaseTlv);
         int setTerminalDataRt = configurable.emv_setTerminalData(tlvBytes,resDatStruct);

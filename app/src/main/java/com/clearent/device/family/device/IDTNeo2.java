@@ -9,6 +9,7 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
+//TODO Add Swagger
 public interface IDTNeo2 {
     boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType);
 

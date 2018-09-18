@@ -9,6 +9,7 @@ import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
 import java.util.Map;
 
+//TODO Add Swagger
 public interface VP8800 {
     boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType);
 

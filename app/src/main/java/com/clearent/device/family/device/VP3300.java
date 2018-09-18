@@ -12,6 +12,7 @@ import java.util.Map;
 /**
  * VP3300
  */
+//TODO Add Swagger
 public interface VP3300 {
 
     boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType);

@@ -10,6 +10,7 @@ import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ICCReaderStatusStruct;
 import com.idtechproducts.device.ICCSettingStruct;
 import com.idtechproducts.device.IDTMSRData;
+import com.idtechproducts.device.IDT_Device;
 import com.idtechproducts.device.MSRSettingStruct;
 import com.idtechproducts.device.OnReceiverListener;
 import com.idtechproducts.device.PowerOnStructure;
@@ -25,7 +26,10 @@ import java.util.Map;
 /**
  * This interface describes the IDT_Device, along with extending some supporting interfaces for Clearent.
  */
+//TODO Add Swagger
 public interface IDTDevice extends Configurable, HasTokenizingSupport, HasSwipeSupport {
+
+    IDT_Device getSDKInstance();
 
     boolean isConfigured();
 
@@ -269,8 +273,6 @@ public interface IDTDevice extends Configurable, HasTokenizingSupport, HasSwipeS
     void setBypassListener(USBBypassListener callback);
 
     void clearBypassListener();
-
-    com.idtechproducts.device.IDT_Device getSDKInstance();
 
     void externalConnect();
 

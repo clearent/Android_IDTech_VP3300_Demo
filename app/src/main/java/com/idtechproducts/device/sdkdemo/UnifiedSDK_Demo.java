@@ -266,7 +266,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 releaseSDK();
             }
 
-            //Default to audio jack. The demo is generic so it doesnt know what device you are coding against.
+            //Default to audio jack. The demo is specific to the VP3300 but it doesnt know the type.
             //The integrator isnt going to prompt the user for the type of device. They will probably configure the type or have it as a part of settings
             //(an approach where the type is known ahead of time).
             //the demo can still switch the type.
