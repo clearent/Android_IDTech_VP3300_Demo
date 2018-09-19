@@ -4,7 +4,7 @@ import android.util.Log;
 
 import com.clearent.device.TransactionTokenNotifier;
 import com.clearent.device.token.domain.MobileJwtResponse;
-import com.google.gson.Gson;
+import com.clearent.device.token.domain.MobileJwtSuccessResponse;
 
 public class TransactionTokenCreatorResponseHandler {
 
@@ -17,14 +17,18 @@ public class TransactionTokenCreatorResponseHandler {
     }
 
     public void handleResponse(MobileJwtResponse mobileJwtResponse) {
-        if(mobileJwtResponse == null || mobileJwtResponse.getMobileJwtPayload() == null || mobileJwtResponse.getMobileJwtPayload().getTransactionToken() == null) {
+        if(mobileJwtResponse == null || (mobileJwtResponse.getMobileJwtSuccessResponse() == null && mobileJwtResponse.getMobileJwtErrorResponse() == null)) {
             transactionTokenNotifier.notifyTransactionTokenFailure(GENERIC_TRANSACTION_TOKEN_ERROR_RESPONSE);
             return;
         }
         try {
-            transactionTokenNotifier.notifyNewTransactionToken(mobileJwtResponse.getMobileJwtPayload().getTransactionToken());
+            if(mobileJwtResponse.getMobileJwtSuccessResponse() != null) {
+                transactionTokenNotifier.notifyNewTransactionToken(mobileJwtResponse.getMobileJwtSuccessResponse().getMobileJwtPayload().getTransactionToken());
+            } else {
+                transactionTokenNotifier.notifyTransactionTokenFailure(mobileJwtResponse.getMobileJwtErrorResponse().getMobileJwtErrorPayload().getMobileJwtError().getErrorMessage());
+            }
         } catch (Exception e) {
-            Log.e("TRANSACTIONTOKEN", e.getMessage());
+            Log.e("CLEARENT", e.getMessage());
             transactionTokenNotifier.notifyTransactionTokenFailure(GENERIC_TRANSACTION_TOKEN_ERROR_RESPONSE);
         }
     }

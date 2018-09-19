@@ -1,54 +1,35 @@
 package com.clearent.device.token.domain;
 
-import com.google.gson.annotations.SerializedName;
-
 public class MobileJwtResponse {
 
-    @SerializedName("code")
-    private String code;
-
-    @SerializedName("status")
-    private String status;
-
-    @SerializedName("exchange-id")
-    private String exchangeId;
-
-    @SerializedName("payload")
-    private MobileJwtPayload mobileJwtPayload;
+    private MobileJwtErrorResponse mobileJwtErrorResponse;
+    private MobileJwtSuccessResponse mobileJwtSuccessResponse;
 
     public MobileJwtResponse() {
-
     }
 
-    public String getCode() {
-        return code;
+    public MobileJwtResponse(MobileJwtSuccessResponse mobileJwtSuccessResponse) {
+        this.mobileJwtSuccessResponse = mobileJwtSuccessResponse;
     }
 
-    public void setCode(String code) {
-        this.code = code;
+    public MobileJwtResponse(MobileJwtErrorResponse mobileJwtErrorResponse) {
+        this.mobileJwtErrorResponse = mobileJwtErrorResponse;
     }
 
-    public String getStatus() {
-        return status;
+
+    public MobileJwtErrorResponse getMobileJwtErrorResponse() {
+        return mobileJwtErrorResponse;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setMobileJwtErrorResponse(MobileJwtErrorResponse mobileJwtErrorResponse) {
+        this.mobileJwtErrorResponse = mobileJwtErrorResponse;
     }
 
-    public MobileJwtPayload getMobileJwtPayload() {
-        return mobileJwtPayload;
+    public MobileJwtSuccessResponse getMobileJwtSuccessResponse() {
+        return mobileJwtSuccessResponse;
     }
 
-    public void setMobileJwtPayload(MobileJwtPayload mobileJwtPayload) {
-        this.mobileJwtPayload = mobileJwtPayload;
-    }
-
-    public String getExchangeId() {
-        return exchangeId;
-    }
-
-    public void setExchangeId(String exchangeId) {
-        this.exchangeId = exchangeId;
+    public void setMobileJwtSuccessResponse(MobileJwtSuccessResponse mobileJwtSuccessResponse) {
+        this.mobileJwtSuccessResponse = mobileJwtSuccessResponse;
     }
 }
