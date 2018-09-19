@@ -16,14 +16,12 @@ public class TransactionTokenCreatorResponseHandler {
         this.transactionTokenNotifier = transactionTokenNotifier;
     }
 
-    public void handleResponse(String json) {
-        if(json == null) {
+    public void handleResponse(MobileJwtResponse mobileJwtResponse) {
+        if(mobileJwtResponse == null || mobileJwtResponse.getMobileJwtPayload() == null || mobileJwtResponse.getMobileJwtPayload().getTransactionToken() == null) {
             transactionTokenNotifier.notifyTransactionTokenFailure(GENERIC_TRANSACTION_TOKEN_ERROR_RESPONSE);
             return;
         }
-        Gson gson = new Gson();
         try {
-            MobileJwtResponse mobileJwtResponse = gson.fromJson(json, MobileJwtResponse.class);
             transactionTokenNotifier.notifyNewTransactionToken(mobileJwtResponse.getMobileJwtPayload().getTransactionToken());
         } catch (Exception e) {
             Log.e("TRANSACTIONTOKEN", e.getMessage());

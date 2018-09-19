@@ -1,10 +1,13 @@
 package com.clearent.device.token.services;
 
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.clearent.device.domain.CommunicationRequest;
 import com.clearent.device.token.domain.ClearentTransactionTokenRequest;
+import com.clearent.device.token.domain.MobileJwtResponse;
 import com.google.gson.Gson;
 
 
@@ -17,10 +20,10 @@ import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class PostTransactionTokenTask extends AsyncTask<Void, Void, String> {
+public class PostTransactionTokenTask extends AsyncTask<Void, Void, MobileJwtResponse> {
 
     public interface AsyncResponse {
-        void processFinish(String output);
+        void processFinish(MobileJwtResponse output);
     }
 
     private static final String RELATIVE_PATH = "/rest/v2/mobilejwt";
@@ -37,61 +40,58 @@ public class PostTransactionTokenTask extends AsyncTask<Void, Void, String> {
     }
 
     @Override
-    protected String doInBackground(Void... voids) {
+    protected MobileJwtResponse doInBackground(Void... voids) {
+        MobileJwtResponse mobileJwtResponse = new MobileJwtResponse();
         try {
-            URL url = new URL(communicationRequest.getBaseUrl() + RELATIVE_PATH);
-
-            HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-
-            urlConnection.setDoInput(true);
-            urlConnection.setDoOutput(true);
-            urlConnection.setRequestProperty("Content-Type", "application/json");
-            urlConnection.setRequestMethod("POST");
-            urlConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
-            urlConnection.setRequestProperty("Accept", "application/json");
-
-            //TODO exceptions ?
-            // Send the post body
-            try {
-                if (clearentTransactionTokenRequest != null) {
-                    OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
-                    Gson gson = new Gson();
-                    String json = gson.toJson(clearentTransactionTokenRequest);
-                    writer.write(json);
-                    writer.flush();
-                }
-            } catch(Exception e) {
-                //TODO notify failure,
-                return "";
+            HttpsURLConnection urlConnection = createHttpsURLConnection();
+            if (clearentTransactionTokenRequest != null) {
+                OutputStreamWriter writer = new OutputStreamWriter(urlConnection.getOutputStream());
+                Gson gson = new Gson();
+                String json = gson.toJson(clearentTransactionTokenRequest);
+                writer.write(json);
+                writer.flush();
+                mobileJwtResponse = callMobileJwt(urlConnection);
             }
-
-            try {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-                StringBuilder stringBuilder = new StringBuilder();
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line).append("\n");
-                }
-                bufferedReader.close();
-                return stringBuilder.toString();
-            } catch (Exception e) {
-                Log.e("ERROR", e.getMessage(), e);
-                return null;
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            Log.e("CLEARENT", "Failed to call mobile jwt endpoint", e);
         }
-        return null;
+        return mobileJwtResponse;
+    }
+
+    private MobileJwtResponse callMobileJwt(HttpsURLConnection urlConnection) {
+        MobileJwtResponse mobileJwtResponse = new MobileJwtResponse();
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line).append("\n");
+            }
+            bufferedReader.close();
+            Gson gson = new Gson();
+            mobileJwtResponse = gson.fromJson(stringBuilder.toString(), MobileJwtResponse.class);
+            return mobileJwtResponse;
+        } catch (Exception e) {
+            Log.e("CLEARENT", e.getMessage(), e);
+        }
+        return mobileJwtResponse;
+    }
+
+    @NonNull
+    private HttpsURLConnection createHttpsURLConnection() throws IOException {
+        URL url = new URL(communicationRequest.getBaseUrl() + RELATIVE_PATH);
+        HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
+        urlConnection.setDoInput(true);
+        urlConnection.setDoOutput(true);
+        urlConnection.setRequestProperty("Content-Type", "application/json");
+        urlConnection.setRequestMethod("POST");
+        urlConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
+        urlConnection.setRequestProperty("Accept", "application/json");
+        return urlConnection;
     }
 
     @Override
-    protected void onPostExecute(String response) {
-        if (response == null) {
-            response = "THERE WAS AN ERROR";
-        }
-        Log.i("INFO", response);
+    protected void onPostExecute(MobileJwtResponse response) {
         delegate.processFinish(response);
     }
 }

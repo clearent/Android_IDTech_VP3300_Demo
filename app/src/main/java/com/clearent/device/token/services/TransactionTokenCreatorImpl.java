@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.clearent.device.domain.CommunicationRequest;
 import com.clearent.device.token.domain.ClearentTransactionTokenRequest;
+import com.clearent.device.token.domain.MobileJwtResponse;
 
 public class TransactionTokenCreatorImpl implements TransactionTokenCreator {
 
@@ -19,9 +20,8 @@ public class TransactionTokenCreatorImpl implements TransactionTokenCreator {
     public void createTransactionToken(final TransactionTokenCreatorResponseHandler transactionTokenCreatorResponseHandler) {
         PostTransactionTokenTask postTransactionTokenTask = new PostTransactionTokenTask(communicationRequest, clearentTransactionTokenRequest, new PostTransactionTokenTask.AsyncResponse() {
             @Override
-            public void processFinish(String output) {
-                Log.i("OUTPUT", output);
-                transactionTokenCreatorResponseHandler.handleResponse(output);
+            public void processFinish(MobileJwtResponse mobileJwtResponse) {
+                transactionTokenCreatorResponseHandler.handleResponse(mobileJwtResponse);
             }
         });
         postTransactionTokenTask.execute();
