@@ -35,7 +35,7 @@ public class DeviceConfiguratorImpl implements DeviceConfigurator {
         byte[] tlvBytes = Common.getBytesFromHexString(upperCaseTlv);
         int setTerminalDataRt = configurable.emv_setTerminalData(tlvBytes,resDatStruct);
         if (ErrorCode.SUCCESS == setTerminalDataRt) {
-            Log.i("INFO","Emv Entry mode changed from 07 to 05");
+            Log.i("CLEARENT","Emv Entry mode changed from 07 to 05");
         } else{
             String error = "Reader failed to configure default terminal tags. ";
             configurable.notifyCommandFailure(setTerminalDataRt, error);
@@ -61,7 +61,7 @@ public class DeviceConfiguratorImpl implements DeviceConfigurator {
         int commandRt = configurable.device_sendDataCommand("6016", false, "05", resDataStruct);
         if (commandRt == ErrorCode.SUCCESS) {
             String info = "Terminal Major Configuration Succeeded ";
-            Log.i("INFO", info);
+            Log.i("CLEARENT", info);
         } else {
             String error = "Reader failed to configure (terminal major). ";
             configurable.notifyCommandFailure(commandRt, error);
@@ -72,7 +72,7 @@ public class DeviceConfiguratorImpl implements DeviceConfigurator {
         int dateRt = initClockDate();
         int timeRt = initClockTime();
         if (0 == dateRt && 0 == timeRt) {
-            Log.i("INFO", "Clock Initialized");
+            Log.i("CLEARENT", "Clock Initialized");
         } else {
             return 1;
         }

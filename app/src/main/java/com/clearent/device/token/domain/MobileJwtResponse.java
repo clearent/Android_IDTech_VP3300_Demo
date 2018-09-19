@@ -16,20 +16,11 @@ public class MobileJwtResponse {
         this.mobileJwtErrorResponse = mobileJwtErrorResponse;
     }
 
-
     public MobileJwtErrorResponse getMobileJwtErrorResponse() {
         return mobileJwtErrorResponse;
     }
 
-    public void setMobileJwtErrorResponse(MobileJwtErrorResponse mobileJwtErrorResponse) {
-        this.mobileJwtErrorResponse = mobileJwtErrorResponse;
-    }
-
     public MobileJwtSuccessResponse getMobileJwtSuccessResponse() {
         return mobileJwtSuccessResponse;
-    }
-
-    public void setMobileJwtSuccessResponse(MobileJwtSuccessResponse mobileJwtSuccessResponse) {
-        this.mobileJwtSuccessResponse = mobileJwtSuccessResponse;
     }
 }

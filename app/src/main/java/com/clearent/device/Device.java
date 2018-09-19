@@ -111,7 +111,7 @@ public abstract class Device implements IDTDevice {
         errorMessage += " Status: " + device_getResponseCodeString(returnCode) + "";
         String[] messageArray = {errorMessage};
         getClearentOnReceiverListener().lcdDisplay(0, messageArray, 0);
-        Log.e("ERROR",message);
+        Log.e("CLEARENT",message);
         completeEmvTransaction();
     }
 
@@ -130,20 +130,18 @@ public abstract class Device implements IDTDevice {
         byte[] value = null;
         int rt =  getSDKInstance().emv_completeTransaction(false, authResponseCode, issuerAuthData, tlvScripts, value);
         if(rt == ErrorCode.SUCCESS) {
-            Log.i("INFO", "Completed the emv transaction");
+            Log.i("CLEARENT", "Completed the emv transaction");
         } else {
             String warn = "Emv transaction failed to complete. \n";
             warn += "Status: " + device_getResponseCodeString(rt) + "";
-            Log.i("WARN", warn);
+            Log.i("CLEARENT", warn);
         }
     }
 
     public void notifyReaderIsReady() {
-        if(readerConfigured && deviceConfigured) {
-            String[] message = {"VIVOpay configured and ready"};
-            getClearentOnReceiverListener().lcdDisplay(0, message, 0);
-            getPublicOnReceiverListener().isReady();
-        }
+        String[] message = {"VIVOpay configured and ready"};
+        getClearentOnReceiverListener().lcdDisplay(0, message, 0);
+        getPublicOnReceiverListener().isReady();
     }
 
     @Override
@@ -197,14 +195,14 @@ public abstract class Device implements IDTDevice {
         errorMessage += "Status: " + device_getResponseCodeString(returnCode) + "";
         String[] messageArray = {errorMessage};
         getClearentOnReceiverListener().lcdDisplay(0, messageArray, 0);
-        Log.e("ERROR",message);
+        Log.e("CLEARENT",message);
     }
 
     @Override
     public void notifyConfigurationFailure(String message) {
         String[] messageArray = {message};
         getClearentOnReceiverListener().lcdDisplay(0, messageArray, 0);
-        Log.e("ERROR",message);
+        Log.e("CLEARENT",message);
     }
 
     @Override
@@ -213,7 +211,7 @@ public abstract class Device implements IDTDevice {
         errorMessage += " Status: " + device_getResponseCodeString(returnCode) + "";
         String[] messageArray = {errorMessage};
         getClearentOnReceiverListener().lcdDisplay(0, messageArray, 0);
-        Log.e("ERROR",message);
+        Log.e("CLEARENT",message);
     }
 
     @Override
@@ -224,6 +222,9 @@ public abstract class Device implements IDTDevice {
     @Override
     public void setReaderConfigured(boolean readerConfigured) {
         this.readerConfigured = readerConfigured;
+        if(this.readerConfigured && deviceConfigured) {
+            notifyReaderIsReady();
+        }
     }
 
     @Override
@@ -234,6 +235,9 @@ public abstract class Device implements IDTDevice {
     @Override
     public void setDeviceConfigured(boolean deviceConfigured) {
         this.deviceConfigured = deviceConfigured;
+        if(readerConfigured && this.deviceConfigured) {
+            notifyReaderIsReady();
+        }
     }
 
     @Override

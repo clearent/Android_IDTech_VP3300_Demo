@@ -42,16 +42,15 @@ public class GetConfigurationTaskResponseHandler {
             configureAids(configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids());
             configureCaPublicKeys(configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys());
             configurable.setReaderConfigured(true);
-            configurable.notifyReaderIsReady();
         } catch (Exception e) {
-            Log.e("ERROR","Failed to process configuration", e);
+            Log.e("CLEARENT","Failed to process configuration", e);
             notifyFailure(GENERAL_ERROR);
         }
     }
 
     private void configureCaPublicKeys(List<CaPublicKey> caPublicKeys) {
         if(caPublicKeys == null || caPublicKeys.isEmpty()) {
-            Log.i("INFO", "No ca public keys to configure");
+            Log.i("CLEARENT", "No ca public keys to configure");
             return;
         }
 
@@ -61,7 +60,7 @@ public class GetConfigurationTaskResponseHandler {
             int ret = configurable.emv_setCAPK(caPublickeyOrdered, resData);
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
-                    Log.i("INFO","EMV Ca Public Key " + caPublicKey.getName() + " Added ");
+                    Log.i("CLEARENT","EMV Ca Public Key " + caPublicKey.getName() + " Added ");
                 } else {
                     String error = "EMV Ca Public Key " + caPublicKey.getName() + " Failed. ";
                     error += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);
@@ -78,7 +77,7 @@ public class GetConfigurationTaskResponseHandler {
     private void configureAids(List<MobileContactAid> mobileContactAids) {
 
         if(mobileContactAids == null || mobileContactAids.isEmpty()) {
-            Log.i("INFO", "No contact aids to configure");
+            Log.i("CLEARENT", "No contact aids to configure");
             return;
         }
 
@@ -88,7 +87,7 @@ public class GetConfigurationTaskResponseHandler {
             int ret = configurable.emv_setApplicationData(mobileContactAid.getName(), values, resData);
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
-                    Log.i("INFO","EMV Contact Aid " + mobileContactAid.getName() + " Added ");
+                    Log.i("CLEARENT","EMV Contact Aid " + mobileContactAid.getName() + " Added ");
                 } else {
                     String error = "EMV create AID " + mobileContactAid.getName() + " Failed. ";
                     error += "Error Code: " + String.format(Locale.US, "%02X ", resData.statusCode);

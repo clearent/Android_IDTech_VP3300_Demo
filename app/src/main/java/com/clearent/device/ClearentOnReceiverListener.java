@@ -83,18 +83,18 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         for(String message:messages) {
             Log.i("WATCH", message);
             if(message != null && "POWERING UNIPAY".equalsIgnoreCase(message) ) {
-                Log.i("INFO", "Starting VIVOpay...");
+                Log.i("CLEARENT", "Starting VIVOpay...");
                 messageList.add("Starting VIVOpay...\n");
             } else if(message != null && "RETURN_CODE_LOW_VOLUME".equalsIgnoreCase(message) ) {
-                Log.i("INFO", "VIVOpay failed to connect.Turn the headphones volume all the way up and reconnect.");
+                Log.i("CLEARENT", "VIVOpay failed to connect.Turn the headphones volume all the way up and reconnect.");
                 messageList.add("Starting VIVOpay...\n");
             } else if(message != null && "TERMINATE".equalsIgnoreCase(message) ) {
-                Log.i("INFO", "IDTech framework terminated the request.");
+                Log.i("CLEARENT", "IDTech framework terminated the request.");
                 messageList.add(message);
             } else if(message != null && "DECLINED".equalsIgnoreCase(message) ) {
-                Log.i("INFO", "This is not really a decline. Clearent is creating a transaction token for later use.");
+                Log.i("CLEARENT", "This is not really a decline. Clearent is creating a transaction token for later use.");
             } else if(message != null && "APPROVED".equalsIgnoreCase(message) ) {
-                Log.i("INFO", "This is not really an approval. Clearent is creating a transaction token for later use.");
+                Log.i("CLEARENT", "This is not really an approval. Clearent is creating a transaction token for later use.");
             } else {
                 messageList.add(message);
             }
@@ -141,7 +141,7 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         if(idtemvData.result == IDTEMVData.APP_NO_MATCHING) {
             //TODO test this..look at the entry mode. is it a non technical fallback swipe
             EntryMode entryMode = getEntryMode(idtemvData);
-            Log.i("INFO","Entry Mode is " + entryMode.name());
+            Log.i("CLEARENT","Entry Mode is " + entryMode.name());
             setPreviousDipDidNotMatchOnApp(true);
             notify("SWIPE CARD");
             idtDevice.msr_startMSRSwipe(30);
@@ -164,27 +164,27 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
         }
 
         EntryMode entryMode = getEntryMode(idtemvData);
-        Log.i("INFO","Entry Mode is " + entryMode.name());
+        Log.i("CLEARENT","Entry Mode is " + entryMode.name());
         if(EntryMode.INVALID.equals(entryMode)) {
-            Log.i("ERROR","No entry mode found. Skip processing.");
+            Log.i("CLEARENT","No entry mode found. Skip processing.");
             return;
         }
 
         //TODO is nontech fallback swipe handled ????
         if (idtemvData.msr_cardData != null && idtemvData.result == IDTEMVData.MSR_SUCCESS) {
             if(entryMode == EntryMode.FALLBACK_SWIPE) {
-                Log.i("INFO","Trying fallback swipe...");
+                Log.i("CLEARENT","Trying fallback swipe...");
                 CardTokenizer cardTokenizer = new CardTokenizerImpl(idtDevice);
                 cardTokenizer.createTransactionTokenForFallback(idtemvData.msr_cardData);
             } else if(entryMode == EntryMode.SWIPE) {
-                Log.i("INFO","Trying swipe from emv method...");
+                Log.i("CLEARENT","Trying swipe from emv method...");
                 swipeMSRData(idtemvData.msr_cardData);
             }
             //TODO test non tech fallback
         } else if (idtemvData.result == IDTEMVData.GO_ONLINE) {
             //TODo test the ios side that has this logic..are we sending dup requests ?
         //} else if (idtemvData.result == IDTEMVData.GO_ONLINE || (entryMode == EntryMode.NONTECH_FALLBACK_SWIPE || entryMode == EntryMode.EMV)) {
-            Log.i("INFO","Trying to go online...");
+            Log.i("CLEARENT","Trying to go online...");
             CardTokenizer cardTokenizer = new CardTokenizerImpl(idtDevice);
             cardTokenizer.createTransactionToken(idtemvData);
         }

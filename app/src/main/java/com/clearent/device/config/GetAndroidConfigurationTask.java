@@ -32,6 +32,8 @@ public class GetAndroidConfigurationTask extends AsyncTask<Void, Void, AndroidCo
 
     private CommunicationRequest communicationRequest;
 
+    private HttpsURLConnection httpsURLConnection;
+
     public AsyncResponse delegate = null;
 
     public GetAndroidConfigurationTask(CommunicationRequest communicationRequest, AsyncResponse delegate) {
@@ -44,11 +46,11 @@ public class GetAndroidConfigurationTask extends AsyncTask<Void, Void, AndroidCo
         try {
             String encodedKernelVersion = Uri.encode(communicationRequest.getKernelVersion());
             URL url = new URL(communicationRequest.getBaseUrl() + RELATIVE_PATH + "/" + communicationRequest.getDeviceSerialNumber() + "/" + encodedKernelVersion);
-            HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-            urlConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
-            urlConnection.setRequestProperty("Accept", "application/json");
+            httpsURLConnection = (HttpsURLConnection) url.openConnection();
+            httpsURLConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
+            httpsURLConnection.setRequestProperty("Accept", "application/json");
             try {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpsURLConnection.getInputStream()));
                 StringBuilder stringBuilder = new StringBuilder();
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
@@ -56,13 +58,14 @@ public class GetAndroidConfigurationTask extends AsyncTask<Void, Void, AndroidCo
                 }
                 bufferedReader.close();
                 Gson gson = new Gson();
-                AndroidConfigurationResponse androidConfigurationResponse = gson.fromJson(stringBuilder.toString(), AndroidConfigurationResponse.class);
-                return androidConfigurationResponse;
+                return gson.fromJson(stringBuilder.toString(), AndroidConfigurationResponse.class);
             } catch (Exception e) {
-                Log.e("ERROR", GENERAL_ERROR, e);
+                Log.e("CLEARENT", GENERAL_ERROR, e);
             }
         } catch (Exception e) {
-            Log.e("ERROR", GENERAL_ERROR,e);
+            Log.e("CLEARENT", GENERAL_ERROR,e);
+        } finally {
+            httpsURLConnection.disconnect();
         }
         return new AndroidConfigurationResponse();
     }

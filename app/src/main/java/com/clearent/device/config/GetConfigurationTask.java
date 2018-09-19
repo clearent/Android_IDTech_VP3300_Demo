@@ -27,6 +27,7 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, ConfigurationRes
     private static final String RELATIVE_PATH = "/rest/v2/mobile/devices";
 
     private CommunicationRequest communicationRequest;
+    private HttpsURLConnection httpsURLConnection;
 
     public AsyncResponse delegate = null;
 
@@ -40,11 +41,11 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, ConfigurationRes
         try {
             String encodedKernelVersion = Uri.encode(communicationRequest.getKernelVersion());
             URL url = new URL(communicationRequest.getBaseUrl() + RELATIVE_PATH + "/" + communicationRequest.getDeviceSerialNumber() + "/" + encodedKernelVersion);
-            HttpsURLConnection urlConnection = (HttpsURLConnection) url.openConnection();
-            urlConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
-            urlConnection.setRequestProperty("Accept", "application/json");
+            httpsURLConnection = (HttpsURLConnection) url.openConnection();
+            httpsURLConnection.setRequestProperty("public-key", communicationRequest.getPublicKey());
+            httpsURLConnection.setRequestProperty("Accept", "application/json");
             try {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpsURLConnection.getInputStream()));
                 StringBuilder stringBuilder = new StringBuilder();
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
@@ -52,15 +53,16 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, ConfigurationRes
                 }
                 bufferedReader.close();
                 Gson gson = new Gson();
-                ConfigurationResponse configurationResponse = gson.fromJson(stringBuilder.toString(), ConfigurationResponse.class);
-                return configurationResponse;
-                //TODO Remove this at some point. had problems at home calling qa. so I used postman to get the json and worked with it locally
-                //return loadJSON();
+                return gson.fromJson(stringBuilder.toString(), ConfigurationResponse.class);
             } catch (Exception e) {
-                Log.e("ERROR", GENERAL_ERROR, e);
+                Log.e("CLEARENT", GENERAL_ERROR, e);
+            } finally {
+                httpsURLConnection.disconnect();
             }
         } catch (Exception e) {
-            Log.e("ERROR", GENERAL_ERROR,e);
+            Log.e("CLEARENT", GENERAL_ERROR, e);
+        } finally {
+            httpsURLConnection.disconnect();
         }
         return new ConfigurationResponse();
     }
@@ -68,23 +70,5 @@ public class GetConfigurationTask extends AsyncTask<Void, Void, ConfigurationRes
     @Override
     protected void onPostExecute(ConfigurationResponse response) {
         delegate.processFinish(response);
-    }
-
-    public String loadJSON() {
-        String json = null;
-        try {
-            String file = "res/raw/testconfig.json";
-            InputStream in = this.getClass().getClassLoader().getResourceAsStream(file);
-            int size = in.available();
-            byte[] buffer = new byte[size];
-            in.read(buffer);
-            in.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
-
     }
 }

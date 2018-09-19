@@ -36,7 +36,7 @@ public class CardTokenizerImpl implements CardTokenizer {
             ClearentTransactionTokenRequest clearentTransactionTokenRequest = createClearentTransactionTokenRequestForASwipe(cardData);
             createTransactionToken(clearentTransactionTokenRequest);
         } catch (Exception e) {
-            Log.e("ERROR", "Failed to create a transaction token for a swipe", e);
+            Log.e("CLEARENT", "Failed to create a transaction token for a swipe", e);
             hasTokenizingSupport.notifyTransactionTokenFailure(FAILED_TO_READ_CARD_ERROR_RESPONSE);
         }
     }
@@ -47,7 +47,7 @@ public class CardTokenizerImpl implements CardTokenizer {
             ClearentTransactionTokenRequest clearentTransactionTokenRequest = createClearentTransactionTokenRequestForFallbackSwipe(cardData);
             createTransactionToken(clearentTransactionTokenRequest);
         }catch (Exception e) {
-            Log.e("ERROR", "Failed to create a transaction token for a fallback swipe", e);
+            Log.e("CLEARENT", "Failed to create a transaction token for a fallback swipe", e);
             hasTokenizingSupport.notifyTransactionTokenFailure(FAILED_TO_READ_CARD_ERROR_RESPONSE);
         }
     }
@@ -58,7 +58,7 @@ public class CardTokenizerImpl implements CardTokenizer {
             ClearentTransactionTokenRequest clearentTransactionTokenRequest = createClearentTransactionTokenRequest(idtemvData);
             createTransactionToken(clearentTransactionTokenRequest);
         }catch (Exception e) {
-            Log.e("ERROR", "Failed to create a transaction token for emv", e);
+            Log.e("CLEARENT", "Failed to create a transaction token for emv", e);
             hasTokenizingSupport.notifyTransactionTokenFailure(FAILED_TO_READ_CARD_ERROR_RESPONSE);
         }
     }
@@ -161,7 +161,7 @@ public class CardTokenizerImpl implements CardTokenizer {
                 String track2Data = Common.getHexStringFromBytes(entry.getValue());
                 clearentTransactionTokenRequest.setTrack2Data(track2Data);
             } else if (tag.equals("FF8105")) {
-                Log.i("INFO", "ff8105 tag found");
+                Log.i("CLEARENT", "ff8105 tag found");
                 //TODO handle track 2 data field located in different area. Is this only on contactless ?
             }
         }
