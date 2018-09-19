@@ -3,6 +3,7 @@ package com.clearent.device.family;
 import android.annotation.SuppressLint;
 
 import com.clearent.device.Configurable;
+import com.clearent.device.DeviceConfigurable;
 import com.clearent.device.HasSwipeSupport;
 import com.clearent.device.HasTokenizingSupport;
 import com.idtechproducts.device.APDUResponseStruct;
@@ -27,13 +28,17 @@ import java.util.Map;
  * This interface describes the IDT_Device, along with extending some supporting interfaces for Clearent.
  */
 //TODO Add Swagger
-public interface IDTDevice extends Configurable, HasTokenizingSupport, HasSwipeSupport {
+public interface IDTDevice extends Configurable, HasTokenizingSupport, HasSwipeSupport, DeviceConfigurable {
 
     IDT_Device getSDKInstance();
 
-    boolean isConfigured();
+    boolean isReaderConfigured();
 
-    void setConfigured(boolean configured);
+    void setReaderConfigured(boolean configured);
+
+    boolean isDeviceConfigured();
+
+    void setDeviceConfigured(boolean configured);
 
     String device_getResponseCodeString(int errorCode);
 

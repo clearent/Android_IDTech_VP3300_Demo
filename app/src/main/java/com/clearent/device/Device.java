@@ -22,6 +22,7 @@ import com.idtechproducts.device.USBBypassListener;
 import com.idtechproducts.device.audiojack.tasks.TaskManager;
 import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -41,7 +42,8 @@ public abstract class Device implements IDTDevice {
 
     private PublicOnReceiverListener publicOnReceiverListener;
     private ClearentOnReceiverListener clearentOnReceiverListener;
-    private boolean configured = false;
+    private boolean readerConfigured = false;
+    private boolean deviceConfigured = false;
 
     public Device(PublicOnReceiverListener publicOnReceiverListener, String paymentsBaseUrl, String paymentsPublicKey) {
         this.publicOnReceiverListener = publicOnReceiverListener;
@@ -137,10 +139,11 @@ public abstract class Device implements IDTDevice {
     }
 
     public void notifyReaderIsReady() {
-        setConfigured(true);
-        String[] message = {"VIVOpay configured and ready"};
-        getClearentOnReceiverListener().lcdDisplay(0, message, 0);
-        getPublicOnReceiverListener().isReady();
+        if(readerConfigured && deviceConfigured) {
+            String[] message = {"VIVOpay configured and ready"};
+            getClearentOnReceiverListener().lcdDisplay(0, message, 0);
+            getPublicOnReceiverListener().isReady();
+        }
     }
 
     @Override
@@ -214,13 +217,23 @@ public abstract class Device implements IDTDevice {
     }
 
     @Override
-    public boolean isConfigured() {
-        return configured;
+    public boolean isReaderConfigured() {
+        return readerConfigured;
     }
 
     @Override
-    public void setConfigured(boolean configured) {
-        this.configured = configured;
+    public void setReaderConfigured(boolean readerConfigured) {
+        this.readerConfigured = readerConfigured;
+    }
+
+    @Override
+    public boolean isDeviceConfigured() {
+        return deviceConfigured;
+    }
+
+    @Override
+    public void setDeviceConfigured(boolean deviceConfigured) {
+        this.deviceConfigured = deviceConfigured;
     }
 
     @Override

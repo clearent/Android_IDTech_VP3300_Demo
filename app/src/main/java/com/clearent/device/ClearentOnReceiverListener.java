@@ -3,6 +3,8 @@ package com.clearent.device;
 
 import android.util.Log;
 
+import com.clearent.device.config.AndroidDeviceConfigurator;
+import com.clearent.device.config.AndroidDeviceConfiguratorImpl;
 import com.clearent.device.config.DeviceConfigurator;
 import com.clearent.device.config.DeviceConfiguratorImpl;
 import com.clearent.device.domain.CommunicationRequest;
@@ -222,16 +224,24 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 
         //If they connect a different reader set the configure flag to false to force configuration.
         if(previousDeviceSerialNumber != null && !previousDeviceSerialNumber.equals(idtDevice.getDeviceSerialNumber())) {
-            idtDevice.setConfigured(false);
+            idtDevice.setReaderConfigured(false);
         }
 
-        if(!idtDevice.isConfigured()) {
+        if(!idtDevice.isReaderConfigured()) {
             DeviceConfigurator deviceConfigurator = new DeviceConfiguratorImpl(idtDevice);
             deviceConfigurator.configure(createCommunicationRequest());
-        } else {
-            String[] readyMessage = {"VIVOpay configured and ready\n"};
-            publicOnReceiverListener.lcdDisplay(0, readyMessage, 0);
         }
+
+        if(!idtDevice.isDeviceConfigured()) {
+            AndroidDeviceConfigurator androidDeviceConfigurator = new AndroidDeviceConfiguratorImpl(idtDevice);
+            androidDeviceConfigurator.configure(createCommunicationRequest());
+        }
+
+        if(idtDevice.isReaderConfigured() && idtDevice.isDeviceConfigured()) {
+           String[] readyMessage = {"VIVOpay configured and ready\n"};
+           publicOnReceiverListener.lcdDisplay(0, readyMessage, 0);
+        }
+
     }
 
     private CommunicationRequest createCommunicationRequest() {
@@ -252,17 +262,20 @@ public class ClearentOnReceiverListener implements OnReceiverListener {
 
     @Override
     public void autoConfigCompleted(StructConfigParameters structConfigParameters) {
-        publicOnReceiverListener.autoConfigCompleted(structConfigParameters);
+        //TODO hide ?
+        //publicOnReceiverListener.autoConfigCompleted(structConfigParameters);
     }
 
     @Override
     public void autoConfigProgress(int i) {
-        publicOnReceiverListener.autoConfigProgress(i);
+        //TODO hide
+        //publicOnReceiverListener.autoConfigProgress(i);
     }
 
     @Override
     public void msgRKICompleted(String s) {
-        publicOnReceiverListener.msgRKICompleted(s);
+        //TODO hide
+        //publicOnReceiverListener.msgRKICompleted(s);
     }
 
     @Override
