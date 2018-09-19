@@ -34,7 +34,7 @@ public class GetAndroidConfigurationTaskResponseHandler {
 
         if(androidConfigurationResponse == null
                 || androidConfigurationResponse.getAndroidDevicePayload() == null) {
-            notifyGeneralFailure();
+            //TODO add back in notifyGeneralFailure();
             return;
         }
 

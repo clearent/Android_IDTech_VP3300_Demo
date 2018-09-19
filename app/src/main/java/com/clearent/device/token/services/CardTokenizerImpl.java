@@ -84,7 +84,6 @@ public class CardTokenizerImpl implements CardTokenizer {
             clearentTransactionTokenRequest = createClearentTransactionToken(false, false, cardData.track2.toUpperCase());
         }
 
-        //add the required tags as a tlv string for emv fallback swipe scenario (ClearentSwitch uses this)
         Map<String, byte[]> requiredTags = new HashMap<>();
         addRequiredTags(requiredTags);
         clearentTransactionTokenRequest.setTlv(convertToTlv(requiredTags));
@@ -226,7 +225,7 @@ public class CardTokenizerImpl implements CardTokenizer {
     }
 
     @NonNull
-    private List<String> getInvalidTsysTags() {
+    List<String> getInvalidTsysTags() {
         List<String> invalidTSYSTags = new ArrayList<>();
         invalidTSYSTags.add("DFEF4D");
         invalidTSYSTags.add("DFEF4C");

@@ -41,6 +41,7 @@ public class GetConfigurationTaskResponseHandler {
         try {
             configureAids(configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids());
             configureCaPublicKeys(configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys());
+            configurable.setReaderConfigured(true);
             configurable.notifyReaderIsReady();
         } catch (Exception e) {
             Log.e("ERROR","Failed to process configuration", e);
