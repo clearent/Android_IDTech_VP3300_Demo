@@ -52,7 +52,7 @@ public abstract class Device implements IDTDevice {
         setClearentOnReceiverListener(new ClearentOnReceiverListener(this, publicOnReceiverListener));
     }
 
-    abstract public IDT_Device getSDKInstance();
+    abstract protected IDT_Device getSDKInstance();
 
     public String getPaymentsBaseUrl() {
         return paymentsBaseUrl;

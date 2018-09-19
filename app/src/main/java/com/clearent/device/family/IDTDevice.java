@@ -27,10 +27,7 @@ import java.util.Map;
 /**
  * This interface describes the IDT_Device, along with extending some supporting interfaces for Clearent.
  */
-//TODO Add Swagger
 public interface IDTDevice extends Configurable, HasTokenizingSupport, HasSwipeSupport, DeviceConfigurable {
-
-    IDT_Device getSDKInstance();
 
     boolean isReaderConfigured();
 

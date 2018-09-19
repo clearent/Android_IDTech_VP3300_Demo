@@ -25,7 +25,7 @@ public class VP3300Impl extends Device implements VP3300 {
     }
 
     @Override
-    public IDT_Device getSDKInstance() {
+    protected IDT_Device getSDKInstance() {
         return idt_vp3300.getSDKInstance();
     }
 

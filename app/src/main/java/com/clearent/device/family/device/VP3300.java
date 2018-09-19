@@ -1,23 +1,37 @@
 package com.clearent.device.family.device;
 
 import com.idtechproducts.device.ICCReaderStatusStruct;
-import com.idtechproducts.device.IDTMSRData;
 import com.idtechproducts.device.ReaderInfo;
 import com.idtechproducts.device.ResDataStruct;
 import com.idtechproducts.device.StructConfigParameters;
-import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
-
-import java.util.Map;
 
 /**
  * VP3300
  */
+//TODO add swagger
 public interface VP3300 {
 
+    /**
+     * Set the device type :
+     *
+     * Device Types
+     * DEVICE_TYPE.DEVICE_VP3300_AJ,
+     * DEVICE_TYPE.DEVICE_VP3300_AJ_USB,
+     * DEVICE_TYPE.DEVICE_VP3300_USB,
+     * DEVICE_TYPE.DEVICE_VP3300_BT,
+     * DEVICE_TYPE.DEVICE_VP3300_BT_USB
+     *
+     * @param deviceType enum
+     * @return
+     */
     boolean device_setDeviceType(ReaderInfo.DEVICE_TYPE deviceType);
 
    // void setIDT_Device(FirmwareUpdateTool fwTool);
 
+    /**
+     * Gets type of device
+     * @return ReaderInfo.DEVICE_TYPE
+     */
     ReaderInfo.DEVICE_TYPE device_getDeviceType();
 
     /**
@@ -35,13 +49,17 @@ public interface VP3300 {
      */
     void release();
 
+    /**
+     * Get the version of SDK.
+     * @return String
+     */
     String config_getSDKVersion();
 
-    String config_getXMLVersionInfo();
+    //String config_getXMLVersionInfo();
 
-    String phone_getInfoManufacture();
+   // String phone_getInfoManufacture();
 
-    String phone_getInfoModel();
+   // String phone_getInfoModel();
 
    // void log_setVerboseLoggingEnable(boolean enable);
 
@@ -196,8 +214,16 @@ public interface VP3300 {
      */
     int icc_powerOnICC(ResDataStruct atrPPS);
 
+    /**
+     * Enables pass through mode for ICC. Required when direct ICC commands are required (power on/off ICC, exchange APDU)
+     * @return success or error code. Values can be parsed with device_getResponseCodeString
+     */
     int icc_passthroughOnICC();
 
+    /**
+     * Disables pass through mode for ICC. Required when executing transactions (start EMV, start MSR, authenticate transaction)
+     * @return success or error code. Values can be parsed with device_getResponseCodeString
+     */
     int icc_passthroughOffICC();
 
     /**
