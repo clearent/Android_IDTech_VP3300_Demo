@@ -2,7 +2,7 @@ package com.clearent.device;
 
 import com.idtechproducts.device.ResDataStruct;
 
-public interface Configurable extends HasDeviceCommand, ReaderReadyAware {
+public interface ReaderConfigurable extends HasDeviceCommand {
     void notifyConfigurationFailure(String message);
     void notifyConfigurationFailure(int returnCode, String message);
     int emv_setCAPK(byte[] key, ResDataStruct respData);

@@ -2,11 +2,10 @@ package com.clearent.device.config;
 
 import android.util.Log;
 
-import com.clearent.device.Configurable;
+import com.clearent.device.ReaderConfigurable;
 import com.clearent.device.config.domain.CaPublicKey;
 import com.clearent.device.config.domain.ConfigurationResponse;
 import com.clearent.device.config.domain.MobileContactAid;
-import com.google.gson.Gson;
 import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ResDataStruct;
@@ -19,10 +18,10 @@ public class GetConfigurationTaskResponseHandler {
 
     private static final String GENERAL_ERROR = "VIVOpay failed to retrieve configuration. Confirm internet access, then reconnect reader.";
 
-    private Configurable configurable;
+    private ReaderConfigurable readerConfigurable;
 
-    public GetConfigurationTaskResponseHandler(Configurable configurable) {
-        this.configurable = configurable;
+    public GetConfigurationTaskResponseHandler(ReaderConfigurable readerConfigurable) {
+        this.readerConfigurable = readerConfigurable;
     }
 
     public void handleResponse(ConfigurationResponse configurationResponse) {
@@ -41,7 +40,7 @@ public class GetConfigurationTaskResponseHandler {
         try {
             configureAids(configurationResponse.getMobileDevicePayload().getMobileDevice().getContactAids());
             configureCaPublicKeys(configurationResponse.getMobileDevicePayload().getMobileDevice().getCaPublicKeys());
-            configurable.setReaderConfigured(true);
+            readerConfigurable.setReaderConfigured(true);
         } catch (Exception e) {
             Log.e("CLEARENT","Failed to process configuration", e);
             notifyFailure(GENERAL_ERROR);
@@ -57,7 +56,7 @@ public class GetConfigurationTaskResponseHandler {
         for(CaPublicKey caPublicKey:caPublicKeys) {
             byte[] caPublickeyOrdered = Common.getByteArray(caPublicKey.getOrderedValues());
             ResDataStruct resData = new ResDataStruct();
-            int ret = configurable.emv_setCAPK(caPublickeyOrdered, resData);
+            int ret = readerConfigurable.emv_setCAPK(caPublickeyOrdered, resData);
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
                     Log.i("CLEARENT","EMV Ca Public Key " + caPublicKey.getName() + " Added ");
@@ -69,7 +68,7 @@ public class GetConfigurationTaskResponseHandler {
             } else {
                 String error = "EMV Ca Public Key " + caPublicKey.getName() + " Failed. ";
                 notifyGeneralFailure();
-                configurable.notifyConfigurationFailure(ret, error);
+                readerConfigurable.notifyConfigurationFailure(ret, error);
             }
         }
     }
@@ -84,7 +83,7 @@ public class GetConfigurationTaskResponseHandler {
         for(MobileContactAid mobileContactAid:mobileContactAids) {
             byte[] values = aidValuesAsByteArray(mobileContactAid.getValues());
             ResDataStruct resData = new ResDataStruct();
-            int ret = configurable.emv_setApplicationData(mobileContactAid.getName(), values, resData);
+            int ret = readerConfigurable.emv_setApplicationData(mobileContactAid.getName(), values, resData);
             if (ret == ErrorCode.SUCCESS) {
                 if (resData.statusCode == 0x00) {
                     Log.i("CLEARENT","EMV Contact Aid " + mobileContactAid.getName() + " Added ");
@@ -96,7 +95,7 @@ public class GetConfigurationTaskResponseHandler {
             } else {
                 String error = "EMV create AID " + mobileContactAid.getName() + " Failed. ";
                 notifyGeneralFailure();
-                configurable.notifyConfigurationFailure(ret, error);
+                readerConfigurable.notifyConfigurationFailure(ret, error);
             }
         }
     }
@@ -120,10 +119,10 @@ public class GetConfigurationTaskResponseHandler {
 
     public void notifyFailure(String message) {
         notifyGeneralFailure();
-        configurable.notifyConfigurationFailure(message);
+        readerConfigurable.notifyConfigurationFailure(message);
     }
 
     private void notifyGeneralFailure() {
-        configurable.notifyConfigurationFailure(GENERAL_ERROR);
+        readerConfigurable.notifyConfigurationFailure(GENERAL_ERROR);
     }
 }

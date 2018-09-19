@@ -2,7 +2,7 @@ package com.clearent.device.family;
 
 import android.annotation.SuppressLint;
 
-import com.clearent.device.Configurable;
+import com.clearent.device.ReaderConfigurable;
 import com.clearent.device.DeviceConfigurable;
 import com.clearent.device.HasSwipeSupport;
 import com.clearent.device.HasTokenizingSupport;
@@ -11,7 +11,6 @@ import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ICCReaderStatusStruct;
 import com.idtechproducts.device.ICCSettingStruct;
 import com.idtechproducts.device.IDTMSRData;
-import com.idtechproducts.device.IDT_Device;
 import com.idtechproducts.device.MSRSettingStruct;
 import com.idtechproducts.device.OnReceiverListener;
 import com.idtechproducts.device.PowerOnStructure;
@@ -27,7 +26,7 @@ import java.util.Map;
 /**
  * This interface describes the IDT_Device, along with extending some supporting interfaces for Clearent.
  */
-public interface IDTDevice extends Configurable, HasTokenizingSupport, HasSwipeSupport, DeviceConfigurable {
+public interface IDTDevice extends ReaderConfigurable, HasTokenizingSupport, HasSwipeSupport, DeviceConfigurable {
 
     boolean isReaderConfigured();
 
@@ -629,7 +628,6 @@ public interface IDTDevice extends Configurable, HasTokenizingSupport, HasSwipeS
     int lcd_createInputField(byte[] specs, ResDataStruct respData);
 
     int lcd_getInputFieldValue(byte[] listGraphicsID, ResDataStruct respData);
-
 
     void stopWaitingTask();
 
