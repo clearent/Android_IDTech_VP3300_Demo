@@ -24,7 +24,7 @@ public class PostReceiptTask extends AsyncTask<Void, Void, ClearentReceiptRespon
         void processFinish(ClearentReceiptResponse output);
     }
 
-    private static final String RELATIVE_PATH = "/rest/v2/receipt";
+    private static final String RELATIVE_PATH = "/rest/v2/receipts";
 
     private HttpsURLConnection httpsURLConnection;
 

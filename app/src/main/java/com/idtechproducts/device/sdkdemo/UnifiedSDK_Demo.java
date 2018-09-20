@@ -155,6 +155,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private TextView status;
         private TextView infoText;
         private TextView dataText;
+        private EditText textAmount;
         private View rootView;
         private LayoutInflater layoutInflater;
         private ViewGroup viewGroup;
@@ -276,7 +277,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             postTransactionRequest.setTransactionToken(transactionToken);
             postTransactionRequest.setApiKey("24425c33043244778a188bd19846e860");
             postTransactionRequest.setBaseUrl("https://gateway-qa.clearent.net");
-            SaleTransaction saleTransaction = new SaleTransaction("1.00");
+            SaleTransaction saleTransaction;
+            if (textAmount == null || textAmount.getText().toString() == null || textAmount.getText().toString().length() == 0) {
+                saleTransaction = new SaleTransaction("1.00");
+            } else {
+                saleTransaction = new SaleTransaction(textAmount.getText().toString());
+            }
             postTransactionRequest.setSaleTransaction(saleTransaction);
             sampleTransaction.doSale(postTransactionRequest, this);
         }
@@ -915,6 +921,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 int ret;
                 startSwipe = true;
                 totalEMVTime = System.currentTimeMillis();
+                textAmount = (EditText) findViewById(R.id.textAmount);
 
 //				ret = device.msr_startMSRSwipe();
                 ret = device.device_startTransaction(1.00, 0.00, 0, 30, null);

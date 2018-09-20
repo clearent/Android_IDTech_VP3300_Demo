@@ -27,6 +27,7 @@
     <string name="action_exit">Exit</string>
 	
     <string name="lbl_sdk_info">SDK info</string>
+    <string name="lbl_amount">Amount</string>
     <string name="lbl_swipe_card">Swipe/Tap</string>
     <string name="lbl_command">Command</string>
     <string name="lbl_cancel">Cancel</string>
