@@ -15,6 +15,14 @@ import com.clearent.device.family.DeviceFactory;
 import com.clearent.device.PublicOnReceiverListener;
 import com.clearent.device.family.device.VP3300;
 import com.clearent.device.token.domain.TransactionToken;
+import com.clearent.sample.PostTransactionRequest;
+import com.clearent.sample.ReceiptDetail;
+import com.clearent.sample.ReceiptRequest;
+import com.clearent.sample.SaleTransaction;
+import com.clearent.sample.SampleReceipt;
+import com.clearent.sample.SampleReceiptImpl;
+import com.clearent.sample.SampleTransaction;
+import com.clearent.sample.SampleTransactionImpl;
 import com.dbconnection.dblibrarybeta.ProfileManager;
 import com.dbconnection.dblibrarybeta.ProfileUtility;
 import com.idtechproducts.device.Common;
@@ -259,6 +267,18 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     commandBtn.setEnabled(true);
                 }
             });
+            runSampleTransaction(transactionToken);
+        }
+
+        private void runSampleTransaction(TransactionToken transactionToken) {
+            SampleTransaction sampleTransaction = new SampleTransactionImpl();
+            PostTransactionRequest postTransactionRequest = new PostTransactionRequest();;
+            postTransactionRequest.setTransactionToken(transactionToken);
+            postTransactionRequest.setApiKey("24425c33043244778a188bd19846e860");
+            postTransactionRequest.setBaseUrl("https://gateway-qa.clearent.net");
+            SaleTransaction saleTransaction = new SaleTransaction("1.00");
+            postTransactionRequest.setSaleTransaction(saleTransaction);
+            sampleTransaction.doSale(postTransactionRequest, this);
         }
 
         public void initializeReader() {
@@ -655,7 +675,26 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             if(lines != null && lines.length > 0 ) {
                 info = lines[0];
                 handler.post(doUpdateStatus);
+                String checkReceiptMessage = "Sample Transaction successful. Transaction Id:";
+                if(lines[0].contains(checkReceiptMessage)) {
+                    runSampleReceipt(lines[0]);
+                }
             }
+
+        }
+
+        private void runSampleReceipt(String line) {
+            String[] parts = line.split(":");
+            ReceiptRequest receiptRequest = new ReceiptRequest();
+            receiptRequest.setApiKey("24425c33043244778a188bd19846e860");
+            receiptRequest.setBaseUrl("https://gateway-qa.clearent.net");
+            ReceiptDetail receiptDetail = new ReceiptDetail();
+            receiptDetail.setEmailAddress("dhigginbotham@clearent.com,bguntli@clearent.com");
+            receiptDetail.setTransactionId(parts[1]);
+            receiptRequest.setReceiptDetail(receiptDetail);
+
+            SampleReceipt sampleReceipt = new SampleReceiptImpl();
+            sampleReceipt.doReceipt(receiptRequest, this);
         }
 
         public void lcdDisplay(int mode, String[] lines, int timeout, byte[] languageCode, byte messageId) {
