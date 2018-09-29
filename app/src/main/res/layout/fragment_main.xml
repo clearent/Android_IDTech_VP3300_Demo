@@ -20,7 +20,7 @@
         android:orientation="vertical"
         android:layout_weight="1"
 	    android:focusable="true"
-	    android:focusableInTouchMode="true"        
+	    android:focusableInTouchMode="true"
         android:background="#dddddd"
         >
 
@@ -44,17 +44,17 @@
 		    android:gravity="bottom"
 		    android:text="@string/lbl_sdk_info"
 		    android:textStyle="bold" >
- 
+
 		</TextView>
 
 		<ScrollView
 		    android:layout_width="fill_parent"
-		    android:layout_height="120dp"
+		    android:layout_height="fill_parent"
 		    android:layout_marginBottom="5dp"
 		    android:layout_marginLeft="10dp"
 		    android:layout_marginRight="10dp"
 		    android:layout_marginTop="5dp"
-		    android:background="#ffffff">		
+		    android:background="#ffffff">
 			<TextView
 			    android:id="@+id/text_area_top"
 			    android:layout_width="fill_parent"
@@ -62,29 +62,9 @@
 			    android:textSize="14sp"
 			    android:textIsSelectable="true"
 			    android:text="" >
-		  	</TextView>  
+		  	</TextView>
 		</ScrollView>
-		
-		<ScrollView
-		    android:layout_width="fill_parent"
-		    android:layout_height="fill_parent"
-		    android:layout_marginBottom="10dp"
-		    android:layout_marginLeft="10dp"
-		    android:layout_marginRight="10dp"
-		    android:layout_marginTop="5dp"
-		    android:background="#ffffff">		
-			<TextView
-		    	android:id="@+id/text_area_bottom"
-		    	android:layout_width="fill_parent"
-		    	android:layout_height="match_parent"
-		    	android:textSize="14sp"
-		    	android:gravity="top"
-		    	android:textIsSelectable="true"
-		    	android:text="" >
-  
-			</TextView>  
-		</ScrollView>
-		  
+
 	</LinearLayout>    
     
 	<LinearLayout

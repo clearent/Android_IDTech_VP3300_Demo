@@ -6,10 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
 import com.clearent.device.family.DeviceFactory;
 import com.clearent.device.PublicOnReceiverListener;
@@ -24,18 +21,16 @@ import com.clearent.sample.SampleReceiptImpl;
 import com.clearent.sample.SampleTransaction;
 import com.clearent.sample.SampleTransactionImpl;
 import com.dbconnection.dblibrarybeta.ProfileManager;
-import com.dbconnection.dblibrarybeta.ProfileUtility;
+import com.dbconnection.dblibrarybeta.RESTResponse;
 import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ErrorCodeInfo;
 import com.idtechproducts.device.ICCReaderStatusStruct;
 import com.idtechproducts.device.IDTEMVData;
-import com.idtechproducts.device.IDTMSRData;
-import com.idtechproducts.device.OnReceiverListenerPINRequest;
+import com.idtechproducts.device.ReaderInfo;
 import com.idtechproducts.device.ReaderInfo.DEVICE_TYPE;
 import com.idtechproducts.device.ResDataStruct;
 import com.idtechproducts.device.StructConfigParameters;
-import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
 import com.idtechproducts.device.audiojack.tools.FirmwareUpdateToolMsg;
 import com.idtechproducts.device.bluetooth.BluetoothLEController;
 
@@ -50,8 +45,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
@@ -66,13 +61,10 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.dbconnection.dblibrarybeta.*;
 
 public class UnifiedSDK_Demo extends ActionBarActivity {
 
@@ -111,26 +103,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             case R.id.action_switch_reader_type:
                 mainView.openReaderSelectDialog();
                 break;
-//            case R.id.action_start_autoconfig:
-//                mainView.runAutoConfig();
-//                break;
-//            case R.id.action_start_rki:
-//                mainView.startRemoteKeyInjection();
-//                break;
-//            case R.id.action_enable_log:
-//                boolean toEnable = !item.isChecked();
-//                item.setChecked(toEnable);
-//                mainView.enableLogFeature(toEnable);
-//                break;
-//            case R.id.action_delete_log:
-//                mainView.deleteLogs();
-//                break;
-//            case R.id.action_firmware_update_init:
-//                mainView.openReaderSelectDialogForFwUpdate();
-//                break;
-//            case R.id.action_firmware_update:
-//                mainView.continueFirmwareUpdate();
-//                break;
             case R.id.action_exit_app:
                 mainView.releaseSDK();
                 finish();
@@ -141,11 +113,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
 
     @SuppressLint("ValidFragment")
-    public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener, OnReceiverListenerPINRequest, RESTResponse {
+    public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener {
         private final long BLE_ScanTimeout = 5000; //in milliseconds
 
         private VP3300 device;
-       // private FirmwareUpdateTool fwTool;
         private static final int REQUEST_ENABLE_BT = 1;
         private long totalEMVTime;
         private boolean calcLRC = true;
@@ -154,7 +125,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         private TextView status;
         private TextView infoText;
-        private TextView dataText;
+        //private TextView dataText;
         private EditText textAmount;
         private View rootView;
         private LayoutInflater layoutInflater;
@@ -172,7 +143,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private Button commandBtn;
         private final int emvTimeout = 30;
 
-        private boolean isFwInitDone = false;
         private boolean btleDeviceRegistered = false;
         private String btleDeviceAddress = "00:1C:97:14:FD:34";
 
@@ -201,7 +171,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 "EMV - Terminal" //19
         };
 
-        private ProfileManager profileManager;
+//        private ProfileManager profileManager;
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -214,8 +184,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             status.setText("Disconnected");
 
             infoText = (TextView) rootView.findViewById(R.id.text_area_top);
-            dataText = (TextView) rootView.findViewById(R.id.text_area_bottom);
-            dataText.setVerticalScrollBarEnabled(true);
+            infoText.setVerticalScrollBarEnabled(true);
 
             swipeButton = (Button) rootView.findViewById(R.id.btn_swipeCard);
             swipeButton.setOnClickListener(new SwipeButtonListener());
@@ -225,7 +194,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             commandBtn.setOnClickListener(new CommandButtonListener());
             commandBtn.setEnabled(false);
 
-            profileManager = new ProfileManager(this);
+           // profileManager = new ProfileManager(this);
 
             return rootView;
         }
@@ -233,8 +202,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         @Override
         public void onActivityCreated(Bundle savedInstanceState) {
 
-            if (device != null)
+            if (device != null) {
                 device.unregisterListen();
+            }
 
             initializeReader();
             openReaderSelectDialog();
@@ -244,8 +214,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         @Override
         public void onDestroy() {
-            if (device != null)
+            if (device != null) {
                 device.unregisterListen();
+            }
+
             super.onDestroy();
         }
 
@@ -259,7 +231,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         public void successfulTransactionToken(final TransactionToken transactionToken) {
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
-                    info = "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
+                    info += "Please remove card\n";
+                    info += "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
                     handler.post(doUpdateStatus);
                     if (alertSwipe != null && alertSwipe.isShowing()) {
                         alertSwipe.dismiss();
@@ -276,7 +249,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             PostTransactionRequest postTransactionRequest = new PostTransactionRequest();;
             postTransactionRequest.setTransactionToken(transactionToken);
             postTransactionRequest.setApiKey("24425c33043244778a188bd19846e860");
-            postTransactionRequest.setBaseUrl("https://gateway-qa.clearent.net");
+            postTransactionRequest.setBaseUrl("https://gateway-sb.clearent.net");
             SaleTransaction saleTransaction;
             if (textAmount == null || textAmount.getText().toString() == null || textAmount.getText().toString().length() == 0) {
                 saleTransaction = new SaleTransaction("1.00");
@@ -292,13 +265,17 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 releaseSDK();
             }
 
-            //Default to audio jack. The demo is specific to the VP3300 but it doesnt know the type.
-            //The integrator isnt going to prompt the user for the type of device. They will probably configure the type or have it as a part of settings
-            //(an approach where the type is known ahead of time).
-            //the demo can still switch the type.
-            device = DeviceFactory.getVP3300(DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-qa.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf");
+            //Gather the context needed to get a device object representing the card reader.
+            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-sb.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf");
+            device = DeviceFactory.getVP3300(demoApplicationContext);
+            device.device_configurePeripheralAndConnect();
 
-            profileManager.doGet();
+            //TODO test this..removed from devicefactory...demo relies on using this for connection check
+            //TODO (this method does a lot more underneath than simply set a device type.
+            //vP3300.device_setDeviceType(applicationContext.getDeviceType());
+
+            //we rolled our own profile manager thats what device_configurePeripheralAndConnect does now.
+            //profileManager.doGet();
 
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
 //            device.log_setVerboseLoggingEnable(true);
@@ -384,8 +361,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                             break;
                     }
                    // device.setIDT_Device(fwTool);
-                    if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT)
+
+                    if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
                         device.registerListen();
+                    }
                 }
             });
 
@@ -679,7 +658,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         public void lcdDisplay(int mode, String[] lines, int timeout) {
             if(lines != null && lines.length > 0 ) {
-                info = lines[0];
+                if(lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE")) {
+                    return;
+                }
+                info += "\n";
+                Log.i("WATCH1", lines[0]);
+                info += lines[0] + "\n";
                 handler.post(doUpdateStatus);
                 String checkReceiptMessage = "Sample Transaction successful. Transaction Id:";
                 if(lines[0].contains(checkReceiptMessage)) {
@@ -693,7 +677,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             String[] parts = line.split(":");
             ReceiptRequest receiptRequest = new ReceiptRequest();
             receiptRequest.setApiKey("24425c33043244778a188bd19846e860");
-            receiptRequest.setBaseUrl("https://gateway-qa.clearent.net");
+            receiptRequest.setBaseUrl("https://gateway-sb.clearent.net");
             ReceiptDetail receiptDetail = new ReceiptDetail();
             receiptDetail.setEmailAddress("dhigginbotham@clearent.com,bguntli@clearent.com");
             receiptDetail.setTransactionId(parts[1]);
@@ -776,7 +760,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                         dialogId = 2;
                         timerDelayRemoveDialog((long) finalTimout * 1000, dlgLanguageMenu);
                     } else {
-                        info = theLines[0];
+                        Log.i("WATCH2", theLines[0]);
+                        info += theLines[0] + "\n";
                         handler.post(doUpdateStatus);
                     }
                 }
@@ -883,7 +868,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private Runnable doUpdateStatus = new Runnable() {
             public void run() {
                 infoText.setText(info);
-                dataText.setText(detail);
+                //dataText.setText(detail);
             }
         };
         private Runnable doSwipeProgressBar = new Runnable() {
@@ -930,7 +915,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 commandBtn.setEnabled(false);
 
                 if (ret == ErrorCode.SUCCESS) {
-                    info = "Please swipe/tap a card";
+                    info = "Please swipe/tap a card\n";
                     detail = "";
                     handler.post(doSwipeProgressBar);
                     handler.post(doUpdateStatus);
@@ -1100,28 +1085,28 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 detail = "";
                                 handler.post(doUpdateStatus);
                                 break;
-                            case 6:
-                                ret = device.device_setPollMode((byte) 0x00);  //Auto Poll On
-                                if (ret == ErrorCode.SUCCESS) {
-                                    info = "Auto Poll On: Successful\n";
-                                } else {
-                                    info = "Auto Poll On: Failed\n";
-                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-                                }
-                                detail = "";
-                                handler.post(doUpdateStatus);
-                                break;
-                            case 7:
-                                ret = device.device_setPollMode((byte) 0x01);  //Auto Poll Off
-                                if (ret == ErrorCode.SUCCESS) {
-                                    info = "Auto Poll Off: Successful\n";
-                                } else {
-                                    info = "Auto Poll Off: Failed\n";
-                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-                                }
-                                detail = "";
-                                handler.post(doUpdateStatus);
-                                break;
+//                            case 6:
+//                                ret = device.device_setPollMode((byte) 0x00);  //Auto Poll On
+//                                if (ret == ErrorCode.SUCCESS) {
+//                                    info = "Auto Poll On: Successful\n";
+//                                } else {
+//                                    info = "Auto Poll On: Failed\n";
+//                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
+//                                }
+//                                detail = "";
+//                                handler.post(doUpdateStatus);
+//                                break;
+//                            case 7:
+//                                ret = device.device_setPollMode((byte) 0x01);  //Auto Poll Off
+//                                if (ret == ErrorCode.SUCCESS) {
+//                                    info = "Auto Poll Off: Successful\n";
+//                                } else {
+//                                    info = "Auto Poll Off: Failed\n";
+//                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
+//                                }
+//                                detail = "";
+//                                handler.post(doUpdateStatus);
+//                                break;
 //                            case 8:
 //                                IDTMSRData cardData = new IDTMSRData();
 //                                ret = device.device_getTransactionResults(cardData);
@@ -1344,7 +1329,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                 byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
 
-                device.emv_allowFallback(true);
+               // device.emv_allowFallback(true);
                 //if (device.emv_getAutoAuthenticateTransaction())
                 //    return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, tags, false);
                 //else
@@ -2309,44 +2294,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             handler.post(doUpdateStatus);
         }
 
-        public void onReceiveMsgUpdateFirmwareResult(final int result) {
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    switch (result) {
-                        case FirmwareUpdateToolMsg.cmdUpdateFirmware_Succeed:
-                            info = "Firmware update is done successfully...";
-                            detail = "";
-                            isFwInitDone = false;
-                            break;
-                        case FirmwareUpdateToolMsg.cmdInitializeUpdateFirmware_Succeed:
-                            if (device.device_getDeviceType() == DEVICE_TYPE.DEVICE_KIOSK_III)
-                                info = "Firmware update initialization is done successfully, please wait for device reconnection and do firmware update.";
-                            else
-                                info = "Firmware update initialization is done successfully, please do firmware update now.";
-                            isFwInitDone = true;
-                            break;
-                        case FirmwareUpdateToolMsg.cmdUpdateFirmware_Timeout:
-                            if (Common.getBootLoaderMode()) {
-                                info = "Firmware update timeout... Please try firmware update again...";
-                                detail = "";
-                            } else {
-                                info = "Firmware update initialization timeout... Please try again...";
-                            }
-                            break;
-                        case FirmwareUpdateToolMsg.cmdUpdateFirmware_DownloadBlockFailed:
-                            info = "Firmware update failed... Please try again...";
-                            detail = "";
-
-                            break;
-                    }
-                    swipeButton.setEnabled(true);
-                    commandBtn.setEnabled(true);
-                    handler.post(doUpdateStatus);
-
-                }
-
-            });
-        }
 
         private String emvErrorCodes(int val) {
             if (val == IDTEMVData.APPROVED_OFFLINE) return "APPROVED_OFFLINE";
@@ -2437,103 +2384,164 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         }
 
+
         public void getProfileResult(String output) {
-            if (output.equals("404") || output.contains("failed to connect")) {
-                Toast.makeText(getActivity(), "Profile not found. trying xml", Toast.LENGTH_SHORT).show();
-                String filepath = getXMLFileFromRaw();
-                if (!isFileExist(filepath)) {
-                    filepath = null;
-                }
-                device.config_setXMLFileNameWithPath(filepath);
-                device.config_loadingConfigurationXMLFile(false);
-
-            } else {
-                device.device_connectWithProfile(ProfileUtility.JSONtoProfile(output));
-                Toast.makeText(getActivity(), "Profile Found", Toast.LENGTH_LONG).show();
-            }
-
-        }
-
-        public void postProfileResult(String s) {
-            Toast.makeText(getActivity(), "Post: " + s, Toast.LENGTH_SHORT).show();
-
-        }
-
-        int _mode = 0;
-        byte[] _key = null;
-        byte[] _PAN = null;
-        int _startTO = 0;
-        int _intervalTO = 0;
-        String _language = "";
-
-        @Override
-        public void pinRequest(final int mode, byte[] key, byte[] PAN, int startTO,
-                               int intervalTO, String language) {
-
-
-            _mode = mode;
-            _key = key;
-            _PAN = PAN;
-            _startTO = startTO;
-            _intervalTO = intervalTO;
-            _language = language;
-
-
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-
-                    // get prompts.xml view
-                    LayoutInflater li = LayoutInflater.from(getActivity());
-                    View promptsView = li.inflate(R.layout.prompts, null);
-
-                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                            getActivity());
-
-                    // set prompts.xml to alertdialog builder
-                    alertDialogBuilder.setView(promptsView);
-
-                    final EditText userInput = (EditText) promptsView
-                            .findViewById(R.id.editTextDialogUserInput);
-
-                    // set dialog message
-                    alertDialogBuilder
-                            .setCancelable(false)
-                            .setPositiveButton("OK",
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            // get user input and set it to result
-                                            // edit text
-                                            String thepin = userInput.getText().toString();
-                                            byte[] pin2 = null;
-                                            try {
-                                                pin2 = thepin.getBytes("UTF-8");
-                                            } catch (UnsupportedEncodingException e) {
-                                                // TODO Auto-generated catch block
-                                                e.printStackTrace();
-                                            }
-                                            device.emv_callbackResponsePIN(mode, null, pin2);
-                                        }
-                                    })
-                            .setNegativeButton("Cancel",
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            dialog.cancel();
-                                            device.emv_callbackResponsePIN(0, null, null);
-                                        }
-                                    });
-
-                    // create alert dialog
-                    AlertDialog alertDialog = alertDialogBuilder.create();
-
-                    // show it
-                    alertDialog.show();
-
-
-                }
-            });
-
+//            if (output.equals("404") || output.contains("failed to connect")) {
+//                Toast.makeText(getActivity(), "Profile not found. trying xml", Toast.LENGTH_SHORT).show();
+//                String filepath = getXMLFileFromRaw();
+//                if (!isFileExist(filepath)) {
+//                    filepath = null;
+//                }
+//                device.config_setXMLFileNameWithPath(filepath);
+//                device.config_loadingConfigurationXMLFile(false);
+//
+//            } else {
+//            StructConfigParameters structConfigParameters = new StructConfigParameters();
+//            structConfigParameters.setModelNumber("sm-t800");
+//            String supportStatus = "um2g=s;ump=s;um2=s;um2i=s;shuttle=s";
+//            structConfigParameters.setSupportStatuses(convertSupportStatuses(supportStatus));
+//            structConfigParameters.setDirectionOutputWave(Short.valueOf("1"));
+//            structConfigParameters.setFrequenceInput(48000);
+//            structConfigParameters.setFrequenceOutput(48000);
+//            structConfigParameters.setBaudRate(9600);
+//            structConfigParameters.setPowerupLastBeforeCMD(Short.valueOf("300"));
+//                structConfigParameters.setUseVoiceRecognition(Short.valueOf("1"));
+//            device.device_connectWithProfile(structConfigParameters);
+//                Toast.makeText(getActivity(), "Profile Found", Toast.LENGTH_LONG).show();
+//            }
 
         }
+
+//        private ReaderInfo.SupportStatus[] convertSupportStatuses(String statusString) {
+//            ReaderInfo.SupportStatus[] supportStatuses = new ReaderInfo.SupportStatus[ReaderInfo.DEVICE_TYPE.values().length];
+//            String[] kvs = statusString.split(";");
+//            String[] var6 = kvs;
+//            int var5 = kvs.length;
+//
+//            for(int var4 = 0; var4 < var5; ++var4) {
+//                String kv = var6[var4];
+//                String[] k_v = kv.split("=");
+//                if (k_v.length == 2) {
+//                    String um = k_v[0].trim().toLowerCase(Locale.US);
+//                    String sup = k_v[1].trim().toLowerCase(Locale.US);
+//                    ReaderInfo.DEVICE_TYPE rt;
+//                    if (!um.equalsIgnoreCase("um2g") && !um.equalsIgnoreCase("ump")) {
+//                        if (!um.equalsIgnoreCase("um2") && !um.equalsIgnoreCase("shuttle")) {
+//                            if (!um.equalsIgnoreCase("unipay")) {
+//                                continue;
+//                            }
+//
+//                            rt = ReaderInfo.DEVICE_TYPE.DEVICE_UNIPAY;
+//                        } else {
+//                            rt = ReaderInfo.DEVICE_TYPE.DEVICE_UNIMAG;
+//                        }
+//                    } else {
+//                        rt = ReaderInfo.DEVICE_TYPE.DEVICE_UNIMAG_PRO;
+//                    }
+//
+//                    ReaderInfo.SupportStatus ss;
+//                    if (sup.equalsIgnoreCase("u")) {
+//                        ss = ReaderInfo.SupportStatus.UNSUPPORTED;
+//                    } else if (sup.equalsIgnoreCase("s")) {
+//                        ss = ReaderInfo.SupportStatus.SUPPORTED;
+//                    } else {
+//                        if (!sup.equalsIgnoreCase("m")) {
+//                            continue;
+//                        }
+//
+//                        ss = ReaderInfo.SupportStatus.MAYBE_SUPPORTED;
+//                    }
+//
+//                    supportStatuses[rt.ordinal()] = ss;
+//                }
+//            }
+//
+//            ReaderInfo.DEVICE_TYPE rtShuttle = ReaderInfo.DEVICE_TYPE.DEVICE_UNIMAG;
+//            ReaderInfo.DEVICE_TYPE rtUniPay = ReaderInfo.DEVICE_TYPE.DEVICE_UNIPAY;
+//            supportStatuses[rtUniPay.ordinal()] = supportStatuses[rtShuttle.ordinal()];
+//            return supportStatuses;
+//        }
+//
+//        public void postProfileResult(String s) {
+//            Toast.makeText(getActivity(), "Post: " + s, Toast.LENGTH_SHORT).show();
+//
+//        }
+
+//        int _mode = 0;
+//        byte[] _key = null;
+//        byte[] _PAN = null;
+//        int _startTO = 0;
+//        int _intervalTO = 0;
+//        String _language = "";
+
+//        @Override
+//        public void pinRequest(final int mode, byte[] key, byte[] PAN, int startTO,
+//                               int intervalTO, String language) {
+//
+//
+//            _mode = mode;
+//            _key = key;
+//            _PAN = PAN;
+//            _startTO = startTO;
+//            _intervalTO = intervalTO;
+//            _language = language;
+//
+//
+//            getActivity().runOnUiThread(new Runnable() {
+//                public void run() {
+//
+//                    // get prompts.xml view
+//                    LayoutInflater li = LayoutInflater.from(getActivity());
+//                    View promptsView = li.inflate(R.layout.prompts, null);
+//
+//                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+//                            getActivity());
+//
+//                    // set prompts.xml to alertdialog builder
+//                    alertDialogBuilder.setView(promptsView);
+//
+//                    final EditText userInput = (EditText) promptsView
+//                            .findViewById(R.id.editTextDialogUserInput);
+//
+//                    // set dialog message
+//                    alertDialogBuilder
+//                            .setCancelable(false)
+//                            .setPositiveButton("OK",
+//                                    new DialogInterface.OnClickListener() {
+//                                        public void onClick(DialogInterface dialog, int id) {
+//                                            // get user input and set it to result
+//                                            // edit text
+//                                            String thepin = userInput.getText().toString();
+//                                            byte[] pin2 = null;
+//                                            try {
+//                                                pin2 = thepin.getBytes("UTF-8");
+//                                            } catch (UnsupportedEncodingException e) {
+//                                                // TODO Auto-generated catch block
+//                                                e.printStackTrace();
+//                                            }
+//                                            device.emv_callbackResponsePIN(mode, null, pin2);
+//                                        }
+//                                    })
+//                            .setNegativeButton("Cancel",
+//                                    new DialogInterface.OnClickListener() {
+//                                        public void onClick(DialogInterface dialog, int id) {
+//                                            dialog.cancel();
+//                                            device.emv_callbackResponsePIN(0, null, null);
+//                                        }
+//                                    });
+//
+//                    // create alert dialog
+//                    AlertDialog alertDialog = alertDialogBuilder.create();
+//
+//                    // show it
+//                    alertDialog.show();
+//
+//
+//                }
+//            });
+
+
+       // }
 
     }
 
