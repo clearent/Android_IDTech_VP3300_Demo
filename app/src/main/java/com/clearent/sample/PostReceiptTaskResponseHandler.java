@@ -3,7 +3,7 @@ package com.clearent.sample;
 
 import android.util.Log;
 
-import com.clearent.device.PublicOnReceiverListener;
+import com.clearent.idtech.android.PublicOnReceiverListener;
 
 public class PostReceiptTaskResponseHandler {
 

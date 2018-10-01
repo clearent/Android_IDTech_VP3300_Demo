@@ -1,6 +1,6 @@
 package com.clearent.sample;
 
-import com.clearent.device.token.domain.TransactionToken;
+import com.clearent.idtech.android.token.domain.TransactionToken;
 
 public class PostTransactionRequest {
 

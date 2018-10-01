@@ -4,7 +4,7 @@ import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.clearent.device.PublicOnReceiverListener;
+import com.clearent.idtech.android.PublicOnReceiverListener;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;

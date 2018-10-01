@@ -2,8 +2,8 @@ package com.idtechproducts.device.sdkdemo;
 
 import android.content.Context;
 
-import com.clearent.device.PublicOnReceiverListener;
-import com.clearent.device.family.ApplicationContext;
+import com.clearent.idtech.android.PublicOnReceiverListener;
+import com.clearent.idtech.android.family.ApplicationContext;
 import com.idtechproducts.device.ReaderInfo;
 
 public class DemoApplicationContext implements ApplicationContext {

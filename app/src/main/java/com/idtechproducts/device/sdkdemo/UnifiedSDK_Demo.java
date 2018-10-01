@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
-import com.clearent.device.family.DeviceFactory;
-import com.clearent.device.PublicOnReceiverListener;
-import com.clearent.device.family.device.VP3300;
-import com.clearent.device.token.domain.TransactionToken;
+import com.clearent.idtech.android.family.DeviceFactory;
+import com.clearent.idtech.android.PublicOnReceiverListener;
+import com.clearent.idtech.android.family.device.VP3300;
+import com.clearent.idtech.android.token.domain.TransactionToken;
 import com.clearent.sample.PostTransactionRequest;
 import com.clearent.sample.ReceiptDetail;
 import com.clearent.sample.ReceiptRequest;
