@@ -266,13 +266,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
 
             //Gather the context needed to get a device object representing the card reader.
-            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-sb.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf");
+            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-sb.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf", getXMLFileFromRaw());
             device = DeviceFactory.getVP3300(demoApplicationContext);
             device.device_configurePeripheralAndConnect();
-
-            //TODO test this..removed from devicefactory...demo relies on using this for connection check
-            //TODO (this method does a lot more underneath than simply set a device type.
-            //vP3300.device_setDeviceType(applicationContext.getDeviceType());
 
             //we rolled our own profile manager thats what device_configurePeripheralAndConnect does now.
             //profileManager.doGet();

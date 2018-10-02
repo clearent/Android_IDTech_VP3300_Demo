@@ -13,13 +13,15 @@ public class DemoApplicationContext implements ApplicationContext {
     private Context context;
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
+    private String idTechXmlConfigurationFileLocation;
 
-    public DemoApplicationContext(ReaderInfo.DEVICE_TYPE deviceType, PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey) {
+    public DemoApplicationContext(ReaderInfo.DEVICE_TYPE deviceType, PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey, String idTechXmlConfigurationFileLocation) {
         this.deviceType = deviceType;
         this.publicOnReceiverListener = publicOnReceiverListener;
         this.context = context;
         this.paymentsBaseUrl = paymentsBaseUrl;
         this.paymentsPublicKey = paymentsPublicKey;
+        this.idTechXmlConfigurationFileLocation = idTechXmlConfigurationFileLocation;
     }
 
     @Override
@@ -47,4 +49,12 @@ public class DemoApplicationContext implements ApplicationContext {
         return paymentsPublicKey;
     }
 
+    @Override
+    public String getIdTechXmlConfigurationFileLocation() {
+        return idTechXmlConfigurationFileLocation;
+    }
+
+    public void setIdTechXmlConfigurationFileLocation(String idTechXmlConfigurationFileLocation) {
+        this.idTechXmlConfigurationFileLocation = idTechXmlConfigurationFileLocation;
+    }
 }
