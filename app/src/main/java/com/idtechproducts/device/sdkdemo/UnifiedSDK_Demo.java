@@ -1,13 +1,10 @@
 package com.idtechproducts.device.sdkdemo;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.Locale;
 
+import com.clearent.idtech.android.domain.CardReadResponseCode;
 import com.clearent.idtech.android.family.DeviceFactory;
 import com.clearent.idtech.android.PublicOnReceiverListener;
 import com.clearent.idtech.android.family.device.VP3300;
@@ -20,8 +17,6 @@ import com.clearent.sample.SampleReceipt;
 import com.clearent.sample.SampleReceiptImpl;
 import com.clearent.sample.SampleTransaction;
 import com.clearent.sample.SampleTransactionImpl;
-import com.dbconnection.dblibrarybeta.ProfileManager;
-import com.dbconnection.dblibrarybeta.RESTResponse;
 import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ErrorCodeInfo;
@@ -31,7 +26,6 @@ import com.idtechproducts.device.ReaderInfo;
 import com.idtechproducts.device.ReaderInfo.DEVICE_TYPE;
 import com.idtechproducts.device.ResDataStruct;
 import com.idtechproducts.device.StructConfigParameters;
-import com.idtechproducts.device.audiojack.tools.FirmwareUpdateToolMsg;
 import com.idtechproducts.device.bluetooth.BluetoothLEController;
 
 import android.annotation.SuppressLint;
@@ -45,7 +39,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -125,7 +118,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         private TextView status;
         private TextView infoText;
-        //private TextView dataText;
         private EditText textAmount;
         private View rootView;
         private LayoutInflater layoutInflater;
@@ -171,8 +163,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 "EMV - Terminal" //19
         };
 
-//        private ProfileManager profileManager;
-
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
@@ -193,8 +183,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             commandBtn = (Button) rootView.findViewById(R.id.btn_command);
             commandBtn.setOnClickListener(new CommandButtonListener());
             commandBtn.setEnabled(false);
-
-           // profileManager = new ProfileManager(this);
 
             return rootView;
         }
@@ -222,7 +210,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         @Override
-         public void isReady() {
+        public void isReady() {
             swipeButton.setEnabled(true);
             commandBtn.setEnabled(true);
         }
@@ -233,6 +221,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 public void run() {
                     info += "Please remove card\n";
                     info += "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
+
+                    ResDataStruct resData = new ResDataStruct();
+                    completeTransaction(resData);
+
                     handler.post(doUpdateStatus);
                     if (alertSwipe != null && alertSwipe.isShowing()) {
                         alertSwipe.dismiss();
@@ -244,12 +236,55 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             runSampleTransaction(transactionToken);
         }
 
+        @Override
+        public void handleCardReadResponse(CardReadResponseCode responseCode) {
+            switch (responseCode) {
+                case USE_CHIP_READER:
+                    info += "Card has chip. Try insert.\n";
+                    handler.post(doUpdateStatus);
+                    swipeButton.setEnabled(true);
+                    commandBtn.setEnabled(true);
+                    if (alertSwipe != null && alertSwipe.isShowing()) {
+                        alertSwipe.dismiss();
+                    }
+                    break;
+                case CONTACTLESS_NOT_SUPPORTED:
+                case TERMINATE:
+                case FALLBACK_TO_SWIPE_FAILED:
+                case TIMEOUT:
+                    swipeButton.setEnabled(true);
+                    commandBtn.setEnabled(true);
+                    if (alertSwipe != null && alertSwipe.isShowing()) {
+                        alertSwipe.dismiss();
+                    }
+                    break;
+                case REMOVE_CARD_AND_TRY_SWIPE:
+                    info += "Remove card\n";
+                    handler.post(doUpdateStatus);
+                    break;
+                case SWIPE_CARD:
+                    info += "Please swipe card\n";
+                    handler.post(doUpdateStatus);
+                    break;
+                default:
+                    Log.d("DEMO", "handle default transaction response");
+            }
+        }
+
+        @Override
+        public void handleConfigurationErrors(String message) {
+            info = "The reader failed to configure. Error - " + message;
+            swipeButton.setEnabled(false);
+            commandBtn.setEnabled(false);
+        }
+
         private void runSampleTransaction(TransactionToken transactionToken) {
             SampleTransaction sampleTransaction = new SampleTransactionImpl();
-            PostTransactionRequest postTransactionRequest = new PostTransactionRequest();;
+            PostTransactionRequest postTransactionRequest = new PostTransactionRequest();
+            ;
             postTransactionRequest.setTransactionToken(transactionToken);
             postTransactionRequest.setApiKey("24425c33043244778a188bd19846e860");
-            postTransactionRequest.setBaseUrl("https://gateway-sb.clearent.net");
+            postTransactionRequest.setBaseUrl("https://gateway-qa.clearent.net");
             SaleTransaction saleTransaction;
             if (textAmount == null || textAmount.getText().toString() == null || textAmount.getText().toString().length() == 0) {
                 saleTransaction = new SaleTransaction("1.00");
@@ -266,43 +301,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
 
             //Gather the context needed to get a device object representing the card reader.
-            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-sb.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf", getXMLFileFromRaw());
+            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-qa.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf", getXMLFileFromRaw());
             device = DeviceFactory.getVP3300(demoApplicationContext);
             device.device_configurePeripheralAndConnect();
-
-            //we rolled our own profile manager thats what device_configurePeripheralAndConnect does now.
-            //profileManager.doGet();
-
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
-//            device.log_setVerboseLoggingEnable(true);
-//            fwTool = new FirmwareUpdateTool(this, getActivity());
             displaySdkInfo();
         }
-
-     //   void runAutoConfig() {
-//            config = null;
-//            String filepath = getXMLFileFromRaw();
-//            if (!isFileExist(filepath)) {
-//                filepath = null;
-//            }
-//            if (ErrorCode.SUCCESS == device.autoConfig_start(filepath))
-//                Toast.makeText(getActivity(), "AutoConfig started", Toast.LENGTH_SHORT).show();
-//            else
-//                Toast.makeText(getActivity(), "AutoConfig not started", Toast.LENGTH_SHORT).show();
-     //   }
-
-    //    void startRemoteKeyInjection() {
-//            int ret = device.device_startRKI();
-//            if (ret != ErrorCode.SUCCESS) {
-//                info = "SDK could not start RKI: " + ErrorCodeInfo.getErrorCodeDescription(ret);
-//                detail = "";
-//            } else {
-//                info = "Remote key injection process started...\nPlease wait...";
-//                detail = "";
-//            }
-//            handler.post(doUpdateStatus);
-
-   //     }
 
         private EditText edtBTLE_Name;
         private Dialog dlgBTLE_Name;
@@ -356,16 +360,14 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 Toast.makeText(getActivity(), "Failed. Please disconnect first.", Toast.LENGTH_SHORT).show();
                             break;
                     }
-                   // device.setIDT_Device(fwTool);
-
                     if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
                         device.registerListen();
                     }
                 }
             });
 
-            swipeButton.setEnabled(true);
-            commandBtn.setEnabled(true);
+            swipeButton.setEnabled(false);
+            commandBtn.setEnabled(false);
 
             builder.create().show();
         }
@@ -374,7 +376,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             public void onClick(View v) {
                 dlgBTLE_Name.dismiss();
                 Common.setBLEDeviceName(edtBTLE_Name.getText().toString());
-                //device.setIDT_Device(fwTool);
                 if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
                     Toast.makeText(getActivity(), "Bluetooth LE is not supported\r\n", Toast.LENGTH_LONG).show();
                     return;
@@ -464,149 +465,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     }
                 };
 
-        private String[] fw_commands = null;
-
-    //    void openReaderSelectDialogForFwUpdate() {
-//            if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_AJ_USB && device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_USB &&
-//                    device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT_USB) {
-//                Toast.makeText(getActivity(), "Only support VP3300 through USB", Toast.LENGTH_LONG).show();
-//                return;
-//            }
-//
-//            if (isFwInitDone) {
-//                Toast.makeText(getActivity(), "FW update initialization was done, please update FW now", Toast.LENGTH_LONG).show();
-//                return;
-//            }
-//            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-//            builder.setTitle("Select a device:");
-//            builder.setCancelable(true);
-//
-//            builder.setItems(R.array.fw_reader_type, new DialogInterface.OnClickListener() {
-//
-//                public void onClick(DialogInterface dialog, int which) {
-//
-//                    String fileNames[] = {"IDT_Firmware_VP3300_AJ.txt", "IDT_Firmware_VP3300_BT.txt", "IDT_Firmware_VP3300_USB.txt"};
-//
-//                    String path = Environment.getExternalStorageDirectory().toString();
-//                    String fileNameWithPath = path + java.io.File.separator + fileNames[which];
-//
-//                    fw_commands = getStringArrayFromFirmwareTXTFile(fileNameWithPath);
-//
-//                    if (fw_commands == null || fw_commands.length == 0) {
-//                        Toast.makeText(getActivity(), "Please check if \"" + fileNames[which] + "\" is located in the root directory.", Toast.LENGTH_LONG).show();
-//                        return;
-//                    } else {
-//                        int i;
-//                        for (i = 0; i < fw_commands.length; i++) {
-//                            if (fw_commands[i] != null)
-//                                break;
-//                        }
-//                        if (i == fw_commands.length) {
-//                            Toast.makeText(getActivity(), "Please check if \"" + fileNames[which] + "\" contains correct data.", Toast.LENGTH_LONG).show();
-//                            return;
-//                        }
-//                    }
-//
-//                    int ret = device.device_updateFirmware(fw_commands);
-//                    if (ret == ErrorCode.SUCCESS) {
-//                        info = "Initialize firmware update...";
-//                        detail = "Please do not unplug the reader.";
-//                        swipeButton.setEnabled(false);
-//                        commandBtn.setEnabled(false);
-//                        Toast.makeText(getActivity(), "FW update started initialization.", Toast.LENGTH_SHORT).show();
-//                    } else {
-//                        Toast.makeText(getActivity(), "FW update initialization cannot be started.", Toast.LENGTH_LONG).show();
-//                        detail = "";
-//                    }
-//                    handler.post(doUpdateStatus);
-//                }
-//            });
-//            builder.create().show();
-    //    }
-
-        private String[] getStringArrayFromFirmwareTXTFile(String strFilePathName) {
-
-            File file = new File(strFilePathName);
-            if (file.exists() == false)
-                return null;
-
-            String[] cmds;
-            int count = 0;
-            BufferedReader br = null;
-            try {
-                br = new BufferedReader(new FileReader(file));
-                String line = "";
-
-                while ((line = br.readLine()) != null && !line.equalsIgnoreCase("END>")) {
-                    count++;
-                }
-                count++;
-                br.close();
-                br = null;
-
-                br = new BufferedReader(new FileReader(file));
-                line = "";
-
-                cmds = new String[count];
-
-                for (int i = 0; i < count; i++) {
-                    line = br.readLine();
-                    if (line != null)
-                        cmds[i] = new String(line);
-                }
-            } catch (IOException e) {
-                return null;
-            } finally {
-                try {
-                    if (br != null)
-                        br.close();
-                } catch (Exception ex) {
-                    return null;
-                }
-            }
-            return cmds;
-        }
-//
-//        void continueFirmwareUpdate() {
-//            if (!Common.getBootLoaderMode()) {
-//                Toast.makeText(getActivity(), "Please initialize firmware update first.", Toast.LENGTH_LONG).show();
-//                return;
-//            }
-//
-//            int ret = device.device_updateFirmware(fw_commands);
-//            if (ret == ErrorCode.SUCCESS) {
-//                swipeButton.setEnabled(false);
-//                commandBtn.setEnabled(false);
-//                Toast.makeText(getActivity(), "FW update started.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Toast.makeText(getActivity(), "FW update cannot be started.", Toast.LENGTH_LONG).show();
-//                detail = "";
-//                handler.post(doUpdateStatus);
-//            }
-//        }
 
         Dialog dlgOnlineAuth = null;
         Dialog dlgCompleteEMV = null;
         Dialog dlgMSRFallback = null;
-
-        /////////Callback functions for EMV/////////
-//        private View.OnClickListener authenticateOnClick = new View.OnClickListener() {
-//            public void onClick(View v) {
-//                //next step
-//                int ret = startAuthentication(_resData);
-//                dlgOnlineAuth.dismiss();
-//                if (ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
-//                    swipeButton.setEnabled(false);
-//                    commandBtn.setEnabled(false);
-//                } else {
-//                    info = "EMV Transaction Failed\n";
-//                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-//                    swipeButton.setEnabled(true);
-//                    commandBtn.setEnabled(true);
-//                }
-//                handler.post(doUpdateStatus);
-//            }
-//        };
 
         private View.OnClickListener onlineApprovedOnClick = new View.OnClickListener() {
             public void onClick(View v) {
@@ -653,8 +515,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         int finalTimout;
 
         public void lcdDisplay(int mode, String[] lines, int timeout) {
-            if(lines != null && lines.length > 0 ) {
-                if(lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE")) {
+            if (lines != null && lines.length > 0) {
+                //framework notifies both methods. Removing dups.
+                if (lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE") || lines[0].contains("TERMINATE") || lines[0].contains("USE MAGSTRIPE")) {
                     return;
                 }
                 info += "\n";
@@ -662,7 +525,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 info += lines[0] + "\n";
                 handler.post(doUpdateStatus);
                 String checkReceiptMessage = "Sample Transaction successful. Transaction Id:";
-                if(lines[0].contains(checkReceiptMessage)) {
+                if (lines[0].contains(checkReceiptMessage)) {
                     runSampleReceipt(lines[0]);
                 }
             }
@@ -673,7 +536,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             String[] parts = line.split(":");
             ReceiptRequest receiptRequest = new ReceiptRequest();
             receiptRequest.setApiKey("24425c33043244778a188bd19846e860");
-            receiptRequest.setBaseUrl("https://gateway-sb.clearent.net");
+            receiptRequest.setBaseUrl("https://gateway-qa.clearent.net");
             ReceiptDetail receiptDetail = new ReceiptDetail();
             receiptDetail.setEmailAddress("dhigginbotham@clearent.com,bguntli@clearent.com");
             receiptDetail.setTransactionId(parts[1]);
@@ -687,7 +550,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             type = (byte) mode;
             theLines = lines;
 
-            if(theLines == null || theLines.length == 0 ) {
+            if (theLines == null || theLines.length == 0) {
                 return;
             }
 
@@ -777,14 +640,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         };
 
-//        public int startAuthentication(ResDataStruct resData) {
-//            byte[] tlvElement;
-//            tlvElement = null;
-//            return device.emv_authenticateTransaction(tlvElement);
-//        }
 
         public int completeTransaction(ResDataStruct resData) {
-//			byte[] authResponseCode = new byte[]{(byte)0x30, 0x30};
             byte[] authResponseCode = new byte[2];
             System.arraycopy(tag8A, 0, authResponseCode, 0, 2);
             byte[] issuerAuthData = new byte[]{(byte) 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, (byte) 0x88, 0x30, 0x30};
@@ -832,24 +689,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         }
 
-//        public void enableLogFeature(boolean enable) {
-//            if (device != null) {
-//                device.log_setSaveLogEnable(enable);
-//            }
-//
-//            if (enable)
-//                Toast.makeText(getActivity(), "Log feature enabled", Toast.LENGTH_SHORT).show();
-//            else
-//                Toast.makeText(getActivity(), "Log feature disabled", Toast.LENGTH_SHORT).show();
-//        }
-//
-//        public void deleteLogs() {
-//            if (device != null) {
-//                int fileDeleted = device.log_deleteLogs();
-//                Toast.makeText(getActivity(), "Total of " + fileDeleted + " files are deleted.", Toast.LENGTH_SHORT).show();
-//            }
-//        }
-
         public void displaySdkInfo() {
             info = "Manufacturer: " + android.os.Build.MANUFACTURER + "\n" +
                     "Model: " + android.os.Build.MODEL + "\n" +
@@ -864,7 +703,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private Runnable doUpdateStatus = new Runnable() {
             public void run() {
                 infoText.setText(info);
-                //dataText.setText(detail);
             }
         };
         private Runnable doSwipeProgressBar = new Runnable() {
@@ -904,7 +742,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 totalEMVTime = System.currentTimeMillis();
                 textAmount = (EditText) findViewById(R.id.textAmount);
 
-//				ret = device.msr_startMSRSwipe();
                 ret = device.device_startTransaction(1.00, 0.00, 0, 30, null);
 
                 swipeButton.setEnabled(false);
@@ -1003,62 +840,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 btnCancelCmd.setOnClickListener(cancelCmdOnClick);
                                 dlgSendCmd.show();
                                 break;
-//                            case 3:
-//                                ResDataStruct configData = new ResDataStruct();
-//                                ret = device.device_reviewAllSetting(configData);
-//                                if (ret == ErrorCode.SUCCESS) {
-//                                    info = "Global Configuration: \n";
-//                                    detail = "";
-//                                    byte[][] tlvGroups = Common.processTLVGroups(configData.resData);
-//
-//                                    if (tlvGroups != null) {
-//                                        for (int i = 0; i < tlvGroups.length; i++) {
-//                                            detail += "Group (FFE4) " + i + ":\r\n";
-//                                            detail += "TLV data:\r\n";
-//                                            detail += Common.getHexStringFromBytes(tlvGroups[i]);
-//
-//                                            Map<String, Map<String, byte[]>> TLVDict = Common.processTLV(tlvGroups[i]);
-//                                            Map<String, byte[]> tags = TLVDict.get("tags");
-//                                            Map<String, byte[]> maskedTags = TLVDict.get("masked");
-//                                            Map<String, byte[]> encryptedTags = TLVDict.get("encrypted");
-//
-//                                            if (!tags.isEmpty()) {
-//                                                detail += "\r\n\r\nUnencrypted Tags:\r\n";
-//                                                Set<String> keys = tags.keySet();
-//                                                for (String key : keys) {
-//                                                    detail += key + ": ";
-//                                                    byte[] data = tags.get(key);
-//                                                    detail += Common.getHexStringFromBytes(data) + "\r\n";
-//                                                }
-//                                            }
-//                                            if (!maskedTags.isEmpty()) {
-//                                                detail += "Masked Tags:\r\n";
-//                                                Set<String> keys = maskedTags.keySet();
-//                                                for (String key : keys) {
-//                                                    detail += key + ": ";
-//                                                    byte[] data = maskedTags.get(key);
-//                                                    detail += Common.getHexStringFromBytes(data) + "\r\n";
-//                                                }
-//                                            }
-//                                            if (!encryptedTags.isEmpty()) {
-//                                                detail += "Encrypted Tags:\r\n";
-//                                                Set<String> keys = encryptedTags.keySet();
-//                                                for (String key : keys) {
-//                                                    detail += key + ": ";
-//                                                    byte[] data = encryptedTags.get(key);
-//                                                    detail += Common.getHexStringFromBytes(data) + "\r\n";
-//                                                }
-//                                            }
-//                                            detail += "\r\n";
-//                                        }
-//                                    } else
-//                                        detail += "data == null\r\n";
-//                                } else {
-//                                    info = "Global Configuration: Failed\n";
-//                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-//                                }
-//                                handler.post(doUpdateStatus);
-//                                break;
+
                             case 4:
                                 ret = device.device_setBurstMode((byte) 0x01);  //Burst Mode On
                                 if (ret == ErrorCode.SUCCESS) {
@@ -1081,45 +863,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 detail = "";
                                 handler.post(doUpdateStatus);
                                 break;
-//                            case 6:
-//                                ret = device.device_setPollMode((byte) 0x00);  //Auto Poll On
-//                                if (ret == ErrorCode.SUCCESS) {
-//                                    info = "Auto Poll On: Successful\n";
-//                                } else {
-//                                    info = "Auto Poll On: Failed\n";
-//                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-//                                }
-//                                detail = "";
-//                                handler.post(doUpdateStatus);
-//                                break;
-//                            case 7:
-//                                ret = device.device_setPollMode((byte) 0x01);  //Auto Poll Off
-//                                if (ret == ErrorCode.SUCCESS) {
-//                                    info = "Auto Poll Off: Successful\n";
-//                                } else {
-//                                    info = "Auto Poll Off: Failed\n";
-//                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-//                                }
-//                                detail = "";
-//                                handler.post(doUpdateStatus);
-//                                break;
-//                            case 8:
-//                                IDTMSRData cardData = new IDTMSRData();
-//                                ret = device.device_getTransactionResults(cardData);
-//                                if (ret == ErrorCode.SUCCESS) {
-//                                    info = "Get Transaction Result: ";
-//                                    detail = Common.parse_MSRData(device.device_getDeviceType(), cardData);
-//                                    if (detail.isEmpty())
-//                                        info += "No data was returned\n";
-//                                    else
-//                                        info += "Successful\n";
-//                                } else {
-//                                    info = "Get Transaction Result: Failed\n";
-//                                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-//                                    detail = "";
-//                                }
-//                                handler.post(doUpdateStatus);
-//                                break;
                             case 9:
                                 ret = device.icc_powerOnICC(resData);
                                 if (ret == ErrorCode.SUCCESS) {
@@ -1183,108 +926,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 detail = "";
                                 handler.post(doUpdateStatus);
                                 break;
-//                            case 14:
-//                                dlgSendCAPDU = new Dialog(getActivity());
-//                                dlgSendCAPDU.setTitle("Please Enter C-APDU");
-//                                dlgSendCAPDU.setCancelable(false);
-//                                dlgSendCAPDU.setContentView(R.layout.apdu_dialog);
-//                                Button btnSendCAPDU = (Button) dlgSendCAPDU.findViewById(R.id.btnSendCAPDU);
-//                                Button btnCancelCAPDU = (Button) dlgSendCAPDU.findViewById(R.id.btnCancelAPDU);
-//                                edtCAPDU = (EditText) dlgSendCAPDU.findViewById(R.id.edtCAPDU);
-//                                if (_first_strAPDU != null) {
-//                                    if (_first_strAPDU.length() > 0)
-//                                        edtCAPDU.setText(_first_strAPDU);
-//                                }
-//                                btnSendCAPDU.setOnClickListener(sendCAPDUOnClick);
-//                                btnCancelCAPDU.setOnClickListener(cancelCAPDUOnClick);
-//                                dlgSendCAPDU.show();
-//                                break;
-//                            case 15:
-//                                dlgStartEMV = new Dialog(getActivity());
-//                                dlgStartEMV.setTitle("Start EMV");
-//                                dlgStartEMV.setCancelable(false);
-//                                dlgStartEMV.setContentView(R.layout.start_emv_dialog);
-//                                CheckBox checkbox_auth = (CheckBox) dlgStartEMV.findViewById(R.id.checkbox_auth);
-//                                CheckBox checkbox_comp = (CheckBox) dlgStartEMV.findViewById(R.id.checkbox_comp);
-//                                checkbox_auth.setOnClickListener(onAuthCheckBoxClick);
-//                                checkbox_auth.setChecked(true);
-//                                device.emv_setAutoAuthenticateTransaction(true);
-//                                checkbox_comp.setOnClickListener(onCompCheckBoxClick);
-//                                checkbox_comp.setChecked(false);
-//                                device.emv_setAutoCompleteTransaction(false);
-//                                Button btnStartEMV = (Button) dlgStartEMV.findViewById(R.id.btnStartEMV);
-//                                Button btnCancel = (Button) dlgStartEMV.findViewById(R.id.btnCancel);
-//                                edtAmount = (EditText) dlgStartEMV.findViewById(R.id.edtAmount);
-//                                edt8A = (EditText) dlgStartEMV.findViewById(R.id.edt8A);
-//                                edt8A.setText(Common.base16Encode(tag8A).toCharArray(), 0, 4);
-//                                btnStartEMV.setOnClickListener(startEMVOnClick);
-//                                btnCancel.setOnClickListener(cancelOnClick);
-//                                dlgStartEMV.show();
-//                                break;
-//                            case 16:
-//                                dlgAID = new Dialog(getActivity());
-//                                dlgAID.setTitle("Select AID Function");
-//                                dlgAID.setCancelable(false);
-//                                dlgAID.setContentView(R.layout.aid_dialog);
-//                                Button btnShowAID = (Button) dlgAID.findViewById(R.id.btnShowAID);
-//                                Button btnRemoveAID = (Button) dlgAID.findViewById(R.id.btnRemoveAID);
-//                                Button btnCreateAID = (Button) dlgAID.findViewById(R.id.btnCreateAID);
-//                                Button btnShowAIDList = (Button) dlgAID.findViewById(R.id.btnShowAIDList);
-//                                Button btnAIDCancel = (Button) dlgAID.findViewById(R.id.btnAIDCancel);
-//                                btnShowAID.setOnClickListener(showAIDOnClick);
-//                                btnRemoveAID.setOnClickListener(removeAIDOnClick);
-//                                btnCreateAID.setOnClickListener(createAIDOnClick);
-//                                btnShowAIDList.setOnClickListener(showAIDListOnClick);
-//                                btnAIDCancel.setOnClickListener(AIDCancelOnClick);
-//                                dlgAID.show();
-//                                break;
-//                            case 17:
-//                                dlgCAPK = new Dialog(getActivity());
-//                                dlgCAPK.setTitle("Select CAPK Function");
-//                                dlgCAPK.setCancelable(false);
-//                                dlgCAPK.setContentView(R.layout.capk_dialog);
-//                                Button btnShowCAPK = (Button) dlgCAPK.findViewById(R.id.btnShowCAPK);
-//                                Button btnRemoveCAPK = (Button) dlgCAPK.findViewById(R.id.btnRemoveCAPK);
-//                                Button btnCreateCAPK = (Button) dlgCAPK.findViewById(R.id.btnCreateCAPK);
-//                                Button btnShowCAPKList = (Button) dlgCAPK.findViewById(R.id.btnShowCAPKList);
-//                                Button btnCAPKCancel = (Button) dlgCAPK.findViewById(R.id.btnCAPKCancel);
-//                                btnShowCAPK.setOnClickListener(showCAPKOnClick);
-//                                btnRemoveCAPK.setOnClickListener(removeCAPKOnClick);
-//                                btnCreateCAPK.setOnClickListener(createCAPKOnClick);
-//                                btnShowCAPKList.setOnClickListener(showCAPKListOnClick);
-//                                btnCAPKCancel.setOnClickListener(CAPKCancelOnClick);
-//                                dlgCAPK.show();
-//                                break;
-//                            case 18:
-//                                dlgCRL = new Dialog(getActivity());
-//                                dlgCRL.setTitle("Select CRL Function");
-//                                dlgCRL.setCancelable(false);
-//                                dlgCRL.setContentView(R.layout.crl_dialog);
-//                                Button btnRemoveCRL = (Button) dlgCRL.findViewById(R.id.btnRemoveCRL);
-//                                Button btnCreateCRL = (Button) dlgCRL.findViewById(R.id.btnCreateCRL);
-//                                Button btnShowCRLList = (Button) dlgCRL.findViewById(R.id.btnShowCRLList);
-//                                Button btnCRLCancel = (Button) dlgCRL.findViewById(R.id.btnCRLCancel);
-//                                btnRemoveCRL.setOnClickListener(removeCRLOnClick);
-//                                btnCreateCRL.setOnClickListener(createCRLOnClick);
-//                                btnShowCRLList.setOnClickListener(showCRLListOnClick);
-//                                btnCRLCancel.setOnClickListener(CRLCancelOnClick);
-//                                dlgCRL.show();
-//                                break;
-//                            case 19:
-//                                dlgTerminal = new Dialog(getActivity());
-//                                dlgTerminal.setTitle("Terminal Settings");
-//                                dlgTerminal.setCancelable(false);
-//                                dlgTerminal.setContentView(R.layout.terminal_dialog);
-//                                Button btnRemoveTML = (Button) dlgTerminal.findViewById(R.id.btnRemoveTML);
-//                                Button btnCreateTML = (Button) dlgTerminal.findViewById(R.id.btnCreateTML);
-//                                Button btnShowTML = (Button) dlgTerminal.findViewById(R.id.btnShowTML);
-//                                Button btnTMLCancel = (Button) dlgTerminal.findViewById(R.id.btnTMLCancel);
-//                                btnRemoveTML.setOnClickListener(removeTMLOnClick);
-//                                btnCreateTML.setOnClickListener(createTMLOnClick);
-//                                btnShowTML.setOnClickListener(showTMLOnClick);
-//                                btnTMLCancel.setOnClickListener(TMLCancelOnClick);
-//                                dlgTerminal.show();
-//                                break;
                             case 20:
                                 ret = device.emv_getEMVKernelVersion(sb);
                                 if (ret == ErrorCode.SUCCESS) {
@@ -1325,11 +966,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                 byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
 
-               // device.emv_allowFallback(true);
+                // device.emv_allowFallback(true);
                 //if (device.emv_getAutoAuthenticateTransaction())
                 //    return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, tags, false);
                 //else
-                return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, null, false);
+                //TODO tags needed ?
+                return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, tags, false);
             }
 //
 //            private View.OnClickListener onAuthCheckBoxClick = new View.OnClickListener() {
@@ -2120,7 +1762,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             handler.post(doUpdateStatus);
         }
 
-        public void msgAudioVolumeAjustFailed() {
+        public void msgAudioVolumeAdjustFailed() {
             info = "SDK could not adjust volume...";
             detail = "";
             handler.post(doUpdateStatus);
@@ -2537,7 +2179,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 //            });
 
 
-       // }
+        // }
 
     }
 
