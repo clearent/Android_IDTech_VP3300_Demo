@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
-import com.clearent.idtech.android.domain.CardReadResponseCode;
+import com.clearent.idtech.android.domain.CardProcessingResponse;
 import com.clearent.idtech.android.family.DeviceFactory;
 import com.clearent.idtech.android.PublicOnReceiverListener;
 import com.clearent.idtech.android.family.device.VP3300;
@@ -235,8 +235,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         @Override
-        public void handleCardReadResponse(CardReadResponseCode cardReadResponseCode) {
-            switch (cardReadResponseCode) {
+        public void handleCardProcessingResponse(CardProcessingResponse cardProcessingResponse) {
+            switch (cardProcessingResponse) {
+                case TERMINATE:
+                case USE_MAGSTRIPE:
+                    break;
                 case USE_CHIP_READER:
                     info += "Card has chip. Try insert.\n";
                     handler.post(doUpdateStatus);
@@ -250,12 +253,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     info += "Remove card\n";
                     handler.post(doUpdateStatus);
                     break;
-                case SWIPE_CARD:
+                case NONTECHNICAL_FALLBACK_SWIPE_CARD:
                     info += "Please swipe card\n";
                     handler.post(doUpdateStatus);
                     break;
                 default:
-                    info += "Card read error: " + cardReadResponseCode.getDisplayMessage() + "\n";
+                    info += "Card processing error: " + cardProcessingResponse.getDisplayMessage() + "\n";
                     handler.post(doUpdateStatus);
                     swipeButton.setEnabled(true);
                     commandBtn.setEnabled(true);
@@ -948,42 +951,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 commandBuilder.create().show();
             }
 
-            public int startEMVTransaction(ResDataStruct resData) {
-                totalEMVTime = System.currentTimeMillis();
-                if (edtAmount == null || edtAmount.getText().toString() == null || edtAmount.getText().toString().length() == 0)
-                    return ErrorCode.INVALID_PARAMETER;
-                double dAmount = Double.parseDouble(edtAmount.getText().toString());
-
-                if (edt8A == null || edt8A.getText().toString() == null || edt8A.getText().toString().length() != 4)
-                    return ErrorCode.INVALID_PARAMETER;
-                tag8A = Common.getBytesFromHexString(edt8A.getText().toString());
-
-                byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
-
-                return device.emv_startTransaction(dAmount, 0.00, 0, emvTimeout, tags, false);
-            }
-
-            private View.OnClickListener startEMVOnClick = new View.OnClickListener() {
-                public void onClick(View v) {
-                    ResDataStruct resData = new ResDataStruct();
-                    info = "Processing EMV Transaction.  Please wait...\n";
-                    detail = "";
-                    handler.post(doUpdateStatus);
-
-                    int ret = startEMVTransaction(resData);
-                    dlgStartEMV.dismiss();
-                    if (ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
-                        swipeButton.setEnabled(false);
-                        commandBtn.setEnabled(false);
-                        Toast.makeText(getActivity(), "Processing EMV Transaction...", Toast.LENGTH_LONG).show();
-                    } else {
-                        info = "EMV Transaction Failed\n";
-                        info += "Status: " + device.device_getResponseCodeString(ret) + "";
-                    }
-                }
-
-            };
-
             private View.OnClickListener sendCmdOnClick = new View.OnClickListener() {
                 public void onClick(View v) {
                     String strCmd = edtCmd.getText().toString();
@@ -1085,7 +1052,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void msgToConnectDevice() {
-            info = "Connecting a reader...";
+            info = "Connecting a reader (when connecting for the first time EMV configuration is applied)...";
             detail = "";
             handler.post(doUpdateStatus);
         }
@@ -1100,7 +1067,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             info = "XML loading error...";
             detail = "";
             handler.post(doUpdateStatus);
-
         }
 
         private String getIDTechAndroidDeviceConfigurationXmlFile() {
