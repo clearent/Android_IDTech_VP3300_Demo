@@ -211,6 +211,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         public void isReady() {
             swipeButton.setEnabled(true);
             commandBtn.setEnabled(true);
+            info += "Card reader is ready for use.\n";
+            handler.post(doUpdateStatus);
         }
 
         @Override
@@ -514,7 +516,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         public void lcdDisplay(int mode, String[] lines, int timeout) {
             if (lines != null && lines.length > 0) {
                 //framework notifies both methods. Removing dups.
-                if (lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE") || lines[0].contains("TERMINATE") || lines[0].contains("USE MAGSTRIPE")) {
+                if (lines[0].contains("SWIPE OR INSERT") || lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE") || lines[0].contains("TERMINATE") || lines[0].contains("USE MAGSTRIPE")) {
                     return;
                 }
                 info += "\n";
@@ -1052,7 +1054,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void msgToConnectDevice() {
-            info = "Connecting a reader (when connecting for the first time EMV configuration is applied)...";
+            info = "Connecting a reader (when connecting for the first time EMV configuration is applied)...\n";
             detail = "";
             handler.post(doUpdateStatus);
         }
