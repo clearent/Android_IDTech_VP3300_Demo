@@ -21,7 +21,6 @@ import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ErrorCodeInfo;
 import com.idtechproducts.device.ICCReaderStatusStruct;
-import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.ReaderInfo;
 import com.idtechproducts.device.ReaderInfo.DEVICE_TYPE;
 import com.idtechproducts.device.ResDataStruct;
@@ -105,7 +104,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
     @SuppressLint("ValidFragment")
     public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener {
-        private final long BLE_ScanTimeout = 5000; //in milliseconds
+        private final long BLE_ScanTimeout = 30000; //in milliseconds
 
         private VP3300 device;
         private static final int REQUEST_ENABLE_BT = 1;
@@ -223,7 +222,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     info += "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
 
                     ResDataStruct resData = new ResDataStruct();
-                    completeTransaction(resData);
+                   // completeTransaction(resData);
 
                     handler.post(doUpdateStatus);
                     if (alertSwipe != null && alertSwipe.isShowing()) {
@@ -374,7 +373,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private View.OnClickListener setBTLE_NameOnClick = new View.OnClickListener() {
             public void onClick(View v) {
                 dlgBTLE_Name.dismiss();
+                //set to device mac address instead of friendly name to see if the the bluetooth works better
+                //String deviceId = "00:1C:97:15:B0:43";
+                //Common.setBLEDeviceName(deviceId);
                 Common.setBLEDeviceName(edtBTLE_Name.getText().toString());
+
                 if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
                     Toast.makeText(getActivity(), "Bluetooth LE is not supported\r\n", Toast.LENGTH_LONG).show();
                     return;
@@ -450,6 +453,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                             } else  //search by name
                             {
                                 String deviceName = btledevice.getName();
+                                String deviceAddress = btledevice.getAddress();
+Log.i("WATCH", "bt device name" + deviceName);
+Log.i("WATCH", "bt device address " +  deviceAddress);
                                 if (deviceName != null && deviceName.startsWith(BLE_Id))  //found the device by name
                                 {
                                     BluetoothLEController.setBluetoothDevice(btledevice);
@@ -464,46 +470,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     }
                 };
 
-
-        Dialog dlgOnlineAuth = null;
-        Dialog dlgCompleteEMV = null;
-        Dialog dlgMSRFallback = null;
-
-        private View.OnClickListener onlineApprovedOnClick = new View.OnClickListener() {
-            public void onClick(View v) {
-                //next step
-                ResDataStruct resData = new ResDataStruct();
-                int ret = completeTransaction(resData);
-                if (ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
-                    swipeButton.setEnabled(false);
-                    commandBtn.setEnabled(false);
-                } else {
-                    info = "EMV Transaction Failed\n";
-                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
-                    swipeButton.setEnabled(true);
-                    commandBtn.setEnabled(true);
-                }
-                dlgCompleteEMV.dismiss();
-                handler.post(doUpdateStatus);
-            }
-
-        };
-
-        private View.OnClickListener authCompCancelOnClick = new View.OnClickListener() {
-            public void onClick(View v) {
-                ResDataStruct resData = new ResDataStruct();
-                device.emv_cancelTransaction(resData);
-                if (dialogId == 0)
-                    dlgOnlineAuth.dismiss();
-                else if (dialogId == 1)
-                    dlgCompleteEMV.dismiss();
-
-                info = "EMV Transaction Cancelled";
-                handler.post(doUpdateStatus);
-                swipeButton.setEnabled(true);
-                commandBtn.setEnabled(true);
-            }
-        };
 
         Dialog dlgMenu;
         Dialog dlgLanguageMenu;
@@ -639,17 +605,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         };
 
-
-        public int completeTransaction(ResDataStruct resData) {
-            byte[] authResponseCode = new byte[2];
-            System.arraycopy(tag8A, 0, authResponseCode, 0, 2);
-            byte[] issuerAuthData = new byte[]{(byte) 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, (byte) 0x88, 0x30, 0x30};
-            byte[] tlvScripts = null;
-            byte[] value = null;
-            return device.emv_completeTransaction(false, authResponseCode, issuerAuthData, tlvScripts, value);
-        }
-
-        private ResDataStruct _resData;
         private int dialogId = 0;  //authenticate_dialog: 0 complete_emv_dialog: 1 language selection: 2 menu_display: 3
 
         public void timerDelayRemoveDialog(long time, final Dialog d) {
@@ -1099,7 +1054,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void dataInOutMonitor(byte[] data, boolean isIncoming) {
-             //Exposed for debugging and support purposes only.
+             //monitor for debugging and support purposes only.
         }
 
         public void msgBatteryLow() {
