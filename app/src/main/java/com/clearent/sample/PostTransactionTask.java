@@ -25,7 +25,7 @@ public class PostTransactionTask extends AsyncTask<Void, Void, ClearentTransacti
         void processFinish(ClearentTransactionResponse output);
     }
 
-    private static final String RELATIVE_PATH = "/rest/v2/mobile/transactions";
+    private static final String RELATIVE_PATH = "/rest/v2/mobile/transactions/sale";
 
     private HttpsURLConnection httpsURLConnection;
 
