@@ -287,7 +287,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         @Override
-        public void handleManualTransactionFailure(String message) {
+        public void handleManualEntryError(String message) {
             info += "\nFailed to get a transaction token from a manually entered card. Error - " + message;
             handler.post(doUpdateStatus);
             manualButton.setEnabled(true);
