@@ -5,16 +5,19 @@ import com.google.gson.annotations.SerializedName;
 public class SaleTransaction {
 
     @SerializedName("software-type")
-    private String softwareType = "IDTECH";
+    private String softwareType;
 
-    @SerializedName("software-version")
-    private String softwareVersion = "android-idtech-vp3300-demo-1.0";
+    @SerializedName("software-type-version")
+    private String softwareTypeVersion;
 
     @SerializedName("type")
     private String type = "SALE";
 
     @SerializedName("amount")
     private String amount;
+
+    @SerializedName("create-token")
+    private String createToken;
 
     public SaleTransaction(String amount) {
         this.amount = amount;
@@ -42,5 +45,21 @@ public class SaleTransaction {
 
     public void setAmount(String amount) {
         this.amount = amount;
+    }
+
+    public String getCreateToken() {
+        return createToken;
+    }
+
+    public void setCreateToken(String createToken) {
+        this.createToken = createToken;
+    }
+
+    public String getSoftwareTypeVersion() {
+        return softwareTypeVersion;
+    }
+
+    public void setSoftwareTypeVersion(String softwareTypeVersion) {
+        this.softwareTypeVersion = softwareTypeVersion;
     }
 }

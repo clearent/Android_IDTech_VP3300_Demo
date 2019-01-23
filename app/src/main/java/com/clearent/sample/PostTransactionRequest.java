@@ -6,6 +6,7 @@ public class PostTransactionRequest {
 
     private String baseUrl;
     private String apiKey;
+
     private TransactionToken transactionToken;
 
     private SaleTransaction saleTransaction;

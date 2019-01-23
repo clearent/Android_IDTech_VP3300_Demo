@@ -5,13 +5,13 @@
     android:background="#ffffff"
     >
 
-    <ImageView
-        android:id="@+id/idtech_logo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:contentDescription="@string/logoDesc"
-        android:src="@drawable/logo" />
+    <!--<ImageView-->
+        <!--android:id="@+id/idtech_logo"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:contentDescription="@string/logoDesc"-->
+        <!--android:src="@drawable/logo" />-->
 
 	<LinearLayout
         android:id="@+id/linearLayoutEditText"
@@ -27,7 +27,7 @@
 		<TextView
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:text="Enter an amount for complete verification" />
+			android:text="Enter an amount (required for all tests)" />
 
 		<EditText
 			android:id="@+id/textAmount"
@@ -35,6 +35,54 @@
 			android:layout_height="wrap_content"
 			android:inputType="numberDecimal"
 			android:text="1.00" />
+
+		<TextView
+			android:id="@+id/manual_entry_header_text"
+			android:layout_width="fill_parent"
+			android:layout_height="24sp"
+			android:layout_marginLeft="1dp"
+			android:gravity="bottom"
+			android:text="Manual Entry Data"
+			android:textStyle="bold" >
+
+		</TextView>
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Enter card" />
+
+		<EditText
+			android:id="@+id/textCard"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:inputType="numberDecimal"
+			android:text="4111111111111111" />
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Enter expiration date (in MMYY format)" />
+
+		<EditText
+			android:id="@+id/textExpirationDate"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:inputType="numberDecimal"
+			android:text="0820" />
+
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Enter csc (optional)" />
+
+		<EditText
+			android:id="@+id/textCsc"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:inputType="numberDecimal"
+			android:text="999" />
 
 		<TextView
 		    android:id="@+id/header_text"
@@ -78,6 +126,11 @@
 	        android:id="@+id/btn_swipeCard"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"/>
+		<Button
+			android:text="@string/lbl_manual_card"
+			android:id="@+id/btn_manualCard"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"/>
 	    <TextView  
 	    	android:id="@+id/status_text"
 	        android:layout_width="0dp" 

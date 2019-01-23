@@ -2,13 +2,19 @@ package com.idtechproducts.device.sdkdemo;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 
+import com.clearent.idtech.android.HasManualTokenizingSupport;
 import com.clearent.idtech.android.domain.CardProcessingResponse;
 import com.clearent.idtech.android.family.DeviceFactory;
 import com.clearent.idtech.android.PublicOnReceiverListener;
 import com.clearent.idtech.android.family.device.VP3300;
 import com.clearent.idtech.android.token.domain.TransactionToken;
+import com.clearent.idtech.android.token.manual.ManualCardTokenizer;
+import com.clearent.idtech.android.token.manual.ManualCardTokenizerImpl;
+import com.clearent.sample.CreditCard;
 import com.clearent.sample.PostTransactionRequest;
 import com.clearent.sample.ReceiptDetail;
 import com.clearent.sample.ReceiptRequest;
@@ -103,10 +109,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
 
     @SuppressLint("ValidFragment")
-    public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener {
-        private final long BLE_ScanTimeout = 30000; //in milliseconds
+    public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener, HasManualTokenizingSupport {
+        private final long BLE_ScanTimeout = 5000; //in milliseconds
 
         private VP3300 device;
+        private ManualCardTokenizer manualCardTokenizer;
         private static final int REQUEST_ENABLE_BT = 1;
         private long totalEMVTime;
         private boolean calcLRC = true;
@@ -116,6 +123,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private TextView status;
         private TextView infoText;
         private EditText textAmount;
+        private EditText textCard;
+        private EditText textExpirationDate;
+        private EditText textCsc;
+
         private View rootView;
         private LayoutInflater layoutInflater;
         private ViewGroup viewGroup;
@@ -129,6 +140,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private EditText edtSelection;
 
         private Button swipeButton;
+        private Button manualButton;
         private Button commandBtn;
         private final int emvTimeout = 30;
 
@@ -175,6 +187,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
             swipeButton = (Button) rootView.findViewById(R.id.btn_swipeCard);
             swipeButton.setOnClickListener(new SwipeButtonListener());
+
+            manualButton = (Button) rootView.findViewById(R.id.btn_manualCard);
+            manualButton.setOnClickListener(new ManualButtonListener());
+            manualButton.setEnabled(true);
 
             swipeButton.setEnabled(false);
             commandBtn = (Button) rootView.findViewById(R.id.btn_command);
@@ -228,6 +244,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     if (alertSwipe != null && alertSwipe.isShowing()) {
                         alertSwipe.dismiss();
                     }
+                    manualButton.setEnabled(true);
                     swipeButton.setEnabled(true);
                     commandBtn.setEnabled(true);
                 }
@@ -270,8 +287,18 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         @Override
+        public void handleManualTransactionFailure(String message) {
+            info += "\nFailed to get a transaction token from a manually entered card. Error - " + message;
+            handler.post(doUpdateStatus);
+            manualButton.setEnabled(true);
+            swipeButton.setEnabled(true);
+            commandBtn.setEnabled(true);
+        }
+
+        @Override
         public void handleConfigurationErrors(String message) {
-            info = "The reader failed to configure. Error - " + message;
+            info += "\nThe reader failed to configure. Error - " + message;
+            handler.post(doUpdateStatus);
             swipeButton.setEnabled(false);
             commandBtn.setEnabled(false);
         }
@@ -279,16 +306,18 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private void runSampleTransaction(TransactionToken transactionToken) {
             SampleTransaction sampleTransaction = new SampleTransactionImpl();
             PostTransactionRequest postTransactionRequest = new PostTransactionRequest();
-            ;
             postTransactionRequest.setTransactionToken(transactionToken);
-            postTransactionRequest.setApiKey("24425c33043244778a188bd19846e860");
-            postTransactionRequest.setBaseUrl("https://gateway-sb.clearent.net");
+            //sandbox
+            postTransactionRequest.setApiKey(getTestApiKey());
+            postTransactionRequest.setBaseUrl(getPaymentsBaseUrl());
             SaleTransaction saleTransaction;
             if (textAmount == null || textAmount.getText().toString() == null || textAmount.getText().toString().length() == 0) {
                 saleTransaction = new SaleTransaction("1.00");
             } else {
                 saleTransaction = new SaleTransaction(textAmount.getText().toString());
             }
+            saleTransaction.setSoftwareTypeVersion("v1.0");
+            saleTransaction.setSoftwareType("android-idtech-vp3300-demo-1.0");
             postTransactionRequest.setSaleTransaction(saleTransaction);
             sampleTransaction.doSale(postTransactionRequest, this);
         }
@@ -298,10 +327,13 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 releaseSDK();
             }
 
+            manualCardTokenizer = new ManualCardTokenizerImpl(this);
+
             //Gather the context needed to get a device object representing the card reader.
-            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), "https://gateway-sb.clearent.net", "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf", getIDTechAndroidDeviceConfigurationXmlFile());
+            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), getPaymentsBaseUrl(), getPaymentsPublicKey(), getIDTechAndroidDeviceConfigurationXmlFile());
+            //DemoApplicationContext demoApplicationContext = new DemoApplicationContext(DEVICE_TYPE.DEVICE_VP3300_BT, this, getActivity(), getPaymentsBaseUrl(), getPaymentsPublicKey(), getIDTechAndroidDeviceConfigurationXmlFile());
             device = DeviceFactory.getVP3300(demoApplicationContext);
-            device.device_configurePeripheralAndConnect();
+            //device.device_configurePeripheralAndConnect();
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
             displaySdkInfo();
         }
@@ -340,11 +372,13 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 dlgBTLE_Name.setContentView(R.layout.btle_device_name_dialog);
                                 Button btnBTLE_Ok = (Button) dlgBTLE_Name.findViewById(R.id.btnSetBTLE_Name_Ok);
                                 edtBTLE_Name = (EditText) dlgBTLE_Name.findViewById(R.id.edtBTLE_Name);
+                                edtBTLE_Name.setText("IDTECH-VP3300-67467", TextView.BufferType.EDITABLE);
                                 btnBTLE_Ok.setOnClickListener(setBTLE_NameOnClick);
                                 dlgBTLE_Name.show();
                             } else
                                 Toast.makeText(getActivity(), "Failed. Please disconnect first.", Toast.LENGTH_SHORT).show();
-                            return;
+                            //return;
+                            break;
                         case 3:
                             if (device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_BT_USB))
                                 Toast.makeText(getActivity(), "VP3300 Bluetooth (USB) is selected", Toast.LENGTH_SHORT).show();
@@ -360,6 +394,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     }
                     if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
                         device.registerListen();
+                        device.device_configurePeripheralAndConnect();
                     }
                 }
             });
@@ -373,11 +408,19 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private View.OnClickListener setBTLE_NameOnClick = new View.OnClickListener() {
             public void onClick(View v) {
                 dlgBTLE_Name.dismiss();
-                //set to device mac address instead of friendly name to see if the the bluetooth works better
-                //String deviceId = "00:1C:97:15:B0:43";
-                //Common.setBLEDeviceName(deviceId);
                 Common.setBLEDeviceName(edtBTLE_Name.getText().toString());
 
+                try {
+                    OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getActivity().openFileOutput("bleId.txt", Context.MODE_PRIVATE));
+                    outputStreamWriter.write(edtBTLE_Name.getText().toString());
+                    outputStreamWriter.close();
+                }
+                catch (IOException e) {
+
+                }
+
+                //Firmware update unsupported
+                //device.setIDT_Device(fwTool);
                 if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
                     Toast.makeText(getActivity(), "Bluetooth LE is not supported\r\n", Toast.LENGTH_LONG).show();
                     return;
@@ -389,7 +432,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     return;
                 }
                 btleDeviceRegistered = false;
-                if (!mBtAdapter.isEnabled()) {
+                if (mBtAdapter == null || !mBtAdapter.isEnabled()) {
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
                 } else {
@@ -405,7 +448,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                     if (resultCode == Activity.RESULT_OK) {
                         Toast.makeText(getActivity(), "Bluetooth has turned on, now searching for device", Toast.LENGTH_SHORT).show();
-                        //start scaning
+                        //start scanning
                         scanLeDevice(true, BLE_ScanTimeout);
                     } else {
                         // User did not enable Bluetooth or an error occurred
@@ -435,38 +478,46 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 new BluetoothAdapter.LeScanCallback() {
                     public void onLeScan(final BluetoothDevice btledevice, int rssi,
                                          byte[] scanRecord) {
-                        String BLE_Id = Common.getBLEDeviceName();
-                        if (BLE_Id != null) {
-                            if (BLE_Id.length() == 17 && BLE_Id.charAt(2) == ':' && BLE_Id.charAt(5) == ':' && BLE_Id.charAt(8) == ':' &&
-                                    BLE_Id.charAt(11) == ':' && BLE_Id.charAt(14) == ':')  //search by address
-                            {
-                                String deviceAddress = btledevice.getAddress();
-                                if (deviceAddress != null && deviceAddress.equalsIgnoreCase(BLE_Id))  //found the device by address
-                                {
-                                    BluetoothLEController.setBluetoothDevice(btledevice);
-                                    btleDeviceAddress = deviceAddress;
-                                    if (!btleDeviceRegistered) {
-                                        device.registerListen();
-                                        btleDeviceRegistered = true;
+
+                      // runOnUiThread(new Runnable() {
+                         //   @Override
+                           // public void run() {
+                                String BLE_Id = Common.getBLEDeviceName();
+                                if (BLE_Id != null) {
+                                    if (BLE_Id.length() == 17 && BLE_Id.charAt(2) == ':' && BLE_Id.charAt(5) == ':' && BLE_Id.charAt(8) == ':' &&
+                                            BLE_Id.charAt(11) == ':' && BLE_Id.charAt(14) == ':')  //search by address
+                                    {
+                                        String deviceAddress = btledevice.getAddress();
+                                        if (deviceAddress != null && deviceAddress.equalsIgnoreCase(BLE_Id))  //found the device by address
+                                        {
+                                            BluetoothLEController.setBluetoothDevice(btledevice);
+                                            btleDeviceAddress = deviceAddress;
+                                            if (!btleDeviceRegistered) {
+                                                device.registerListen();
+                                                btleDeviceRegistered = true;
+                                            }
+                                        }
+                                    } else  //search by name
+                                    {
+                                        String deviceName = btledevice.getName();
+                                        String deviceAddress = btledevice.getAddress();
+                                        //if (!btleDeviceRegistered && deviceName != null && deviceName.startsWith(BLE_Id))  //found the device by name
+                                        if (deviceName != null && deviceName.equals(BLE_Id))  //found the device by name
+                                        {
+                                            BluetoothLEController.setBluetoothDevice(btledevice);
+                                            btleDeviceAddress = btledevice.getAddress();
+                                            if (!btleDeviceRegistered) {
+                                                btleDeviceRegistered = true;
+                                                info += "\n";
+                                                info += "Bluetooth device (" + deviceAddress + ") is paired with App. Registering bluetooth device with Clearent framework\n";
+                                                handler.post(doUpdateStatus);
+                                                device.registerListen();
+                                            }
+                                        }
                                     }
                                 }
-                            } else  //search by name
-                            {
-                                String deviceName = btledevice.getName();
-                                String deviceAddress = btledevice.getAddress();
-Log.i("WATCH", "bt device name" + deviceName);
-Log.i("WATCH", "bt device address " +  deviceAddress);
-                                if (deviceName != null && deviceName.startsWith(BLE_Id))  //found the device by name
-                                {
-                                    BluetoothLEController.setBluetoothDevice(btledevice);
-                                    btleDeviceAddress = btledevice.getAddress();
-                                    if (!btleDeviceRegistered) {
-                                        device.registerListen();
-                                        btleDeviceRegistered = true;
-                                    }
-                                }
-                            }
-                        }
+                            //}
+                        //});
                     }
                 };
 
@@ -500,10 +551,10 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
         private void runSampleReceipt(String line) {
             String[] parts = line.split(":");
             ReceiptRequest receiptRequest = new ReceiptRequest();
-            receiptRequest.setApiKey("24425c33043244778a188bd19846e860");
-            receiptRequest.setBaseUrl("https://gateway-sb.clearent.net");
+            receiptRequest.setApiKey(getTestApiKey());
+            receiptRequest.setBaseUrl(getPaymentsBaseUrl());
             ReceiptDetail receiptDetail = new ReceiptDetail();
-            receiptDetail.setEmailAddress("dhigginbotham@clearent.com,bguntli@clearent.com");
+            receiptDetail.setEmailAddress("dhigginbotham@clearent.com,lwalden@clearent.com");
             receiptDetail.setTransactionId(parts[1]);
             receiptRequest.setReceiptDetail(receiptDetail);
 
@@ -644,7 +695,7 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
         }
 
         public void displaySdkInfo() {
-            info = "Manufacturer: " + android.os.Build.MANUFACTURER + "\n" +
+            info += "Manufacturer: " + android.os.Build.MANUFACTURER + "\n" +
                     "Model: " + android.os.Build.MODEL + "\n" +
                     "OS Version: " + android.os.Build.VERSION.RELEASE + " \n" +
                     "SDK Version: \n" + device.config_getSDKVersion() + "\n";
@@ -689,6 +740,20 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
 
         private boolean startSwipe = false;
 
+        public String getTestApiKey(){
+            return "24425c33043244778a188bd19846e860";
+        }
+
+        @Override
+        public String getPaymentsBaseUrl() {
+            return "https://gateway-sb.clearent.net";
+        }
+
+        @Override
+        public String getPaymentsPublicKey() {
+            return "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf";
+        }
+
         private class SwipeButtonListener implements OnClickListener {
             public void onClick(View arg0) {
                 int ret;
@@ -720,6 +785,30 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
                 }
             }
         }
+
+        private class ManualButtonListener implements OnClickListener {
+            public void onClick(View arg0) {
+                textCard = (EditText) findViewById(R.id.textCard);
+                textExpirationDate = (EditText) findViewById(R.id.textExpirationDate);
+                textCsc = (EditText) findViewById(R.id.textCsc);
+
+                CreditCard creditCard = new CreditCard();
+                creditCard.setCard(textCard.getText().toString());
+                creditCard.setExpirationDateMMYY(textExpirationDate.getText().toString());
+                creditCard.setCsc(textCsc.getText().toString());
+
+                manualCardTokenizer.createTransactionToken(creditCard);
+
+                manualButton.setEnabled(false);
+                commandBtn.setEnabled(false);
+                swipeButton.setEnabled(false);
+
+                info = "Manual tokenization requested\n";
+                detail = "";
+                handler.post(doUpdateStatus);
+            }
+        }
+
 
         private class CommandButtonListener implements OnClickListener {
 
@@ -958,17 +1047,22 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
 
         ////////////// CALLBACKS /////////////
         public void deviceConnected() {
-            status.setText("Connected");
+            status.setText("Connected to Sandbox");
             if (!Common.getBootLoaderMode()) {
                 String device_name = device.device_getDeviceType().toString();
-                info = device_name.replace("DEVICE_", "");
+                info += device_name.replace("DEVICE_", "");
                 info += " Reader is connected\r\n";
-                if (info.startsWith("VP3300_BT Reader"))
-                    info += "Address: " + btleDeviceAddress;
+                info += "Address: " + btleDeviceAddress;
                 detail = "";
                 handler.post(doUpdateStatus);
             }
             Toast.makeText(getActivity(), "Reader Connected", Toast.LENGTH_LONG).show();
+
+            if(btleDeviceRegistered) {
+                info += "\n";
+                info += "Configuring the peripheral and connecting to the Clearent Framework.\n";
+                device.device_configurePeripheralAndConnect();
+            }
         }
 
         public void deviceDisconnected() {
@@ -981,7 +1075,7 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
             commandBtn.setEnabled(false);
 
             if (!Common.getBootLoaderMode()) {
-                info = "Reader is disconnected";
+                info += "Reader is disconnected";
                 detail = "";
                 handler.post(doUpdateStatus);
             }
@@ -990,7 +1084,7 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
         public void timeout(int errorCode) {
             if (alertSwipe != null && alertSwipe.isShowing())
                 alertSwipe.dismiss();
-            info = ErrorCodeInfo.getErrorCodeDescription(errorCode);
+            info += ErrorCodeInfo.getErrorCodeDescription(errorCode);
             detail = "";
             handler.post(doUpdateStatus);
             swipeButton.setEnabled(true);
@@ -1002,26 +1096,26 @@ Log.i("WATCH", "bt device address " +  deviceAddress);
                 String strHexResp = Common.getHexStringFromBytes(dataNotify);
                 Log.d("Demo Info >>>>>", "dataNotify=" + strHexResp);
 
-                info = "ICC Notification Info: " + strMessage + "\n" + "Resp: " + strHexResp;
+                info += "ICC Notification Info: " + strMessage + "\n" + "Resp: " + strHexResp;
                 detail = "";
                 handler.post(doUpdateStatus);
             }
         }
 
         public void msgToConnectDevice() {
-            info = "Connecting a reader (when connecting for the first time EMV configuration is applied)...\n";
+            info += "\nIDTech is connected but Clearent still needs to apply EMV configuration...\n";
             detail = "";
             handler.post(doUpdateStatus);
         }
 
         public void msgAudioVolumeAdjustFailed() {
-            info = "SDK could not adjust volume...";
+            info += "SDK could not adjust volume...";
             detail = "";
             handler.post(doUpdateStatus);
         }
 
         public void LoadXMLConfigFailureInfo(int index, String strMessage) {
-            info = "XML loading error...";
+            info += "XML loading error...";
             detail = "";
             handler.post(doUpdateStatus);
         }
