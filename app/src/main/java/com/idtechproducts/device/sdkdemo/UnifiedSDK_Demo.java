@@ -110,7 +110,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
     @SuppressLint("ValidFragment")
     public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener, HasManualTokenizingSupport {
-        private final long BLE_ScanTimeout = 5000; //in milliseconds
+        private final long BLE_ScanTimeout = 35000; //in milliseconds
 
         private VP3300 device;
         private ManualCardTokenizer manualCardTokenizer;
@@ -479,9 +479,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     public void onLeScan(final BluetoothDevice btledevice, int rssi,
                                          byte[] scanRecord) {
 
-                      // runOnUiThread(new Runnable() {
-                         //   @Override
-                           // public void run() {
+                       runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
                                 String BLE_Id = Common.getBLEDeviceName();
                                 if (BLE_Id != null) {
                                     if (BLE_Id.length() == 17 && BLE_Id.charAt(2) == ':' && BLE_Id.charAt(5) == ':' && BLE_Id.charAt(8) == ':' &&
@@ -516,8 +516,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                         }
                                     }
                                 }
-                            //}
-                        //});
+                            }
+                        });
                     }
                 };
 
@@ -530,20 +530,28 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         byte MessageId;
         int finalTimout;
 
-        public void lcdDisplay(int mode, String[] lines, int timeout) {
+        public void lcdDisplay(int mode, final String[] lines, int timeout) {
             if (lines != null && lines.length > 0) {
                 //framework notifies both methods. Removing dups.
                 if (lines[0].contains("SWIPE OR INSERT") || lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE") || lines[0].contains("TERMINATE") || lines[0].contains("USE MAGSTRIPE")) {
                     return;
                 }
-                info += "\n";
-                Log.i("WATCH1", lines[0]);
-                info += lines[0] + "\n";
-                handler.post(doUpdateStatus);
-                String checkReceiptMessage = "Sample Transaction successful. Transaction Id:";
-                if (lines[0].contains(checkReceiptMessage)) {
-                    runSampleReceipt(lines[0]);
-                }
+                getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        if(lines[0].contains("TIME OUT")) {
+                            swipeButton.setEnabled(true);
+                            commandBtn.setEnabled(true);
+                        }
+                        info += "\n";
+                        Log.i("WATCH1", lines[0]);
+                        info += lines[0] + "\n";
+                        handler.post(doUpdateStatus);
+                        String checkReceiptMessage = "Sample Transaction successful. Transaction Id:";
+                        if (lines[0].contains(checkReceiptMessage)) {
+                            runSampleReceipt(lines[0]);
+                        }
+                    }
+                });
             }
 
         }
@@ -1057,12 +1065,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 handler.post(doUpdateStatus);
             }
             Toast.makeText(getActivity(), "Reader Connected", Toast.LENGTH_LONG).show();
-
-            if(btleDeviceRegistered) {
-                info += "\n";
-                info += "Configuring the peripheral and connecting to the Clearent Framework.\n";
-                device.device_configurePeripheralAndConnect();
-            }
         }
 
         public void deviceDisconnected() {
