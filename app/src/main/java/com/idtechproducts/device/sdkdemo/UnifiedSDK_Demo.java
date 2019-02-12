@@ -1,9 +1,13 @@
 package com.idtechproducts.device.sdkdemo;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 import com.clearent.idtech.android.HasManualTokenizingSupport;
@@ -27,10 +31,14 @@ import com.idtechproducts.device.Common;
 import com.idtechproducts.device.ErrorCode;
 import com.idtechproducts.device.ErrorCodeInfo;
 import com.idtechproducts.device.ICCReaderStatusStruct;
+import com.idtechproducts.device.IDTEMVData;
 import com.idtechproducts.device.ReaderInfo;
 import com.idtechproducts.device.ReaderInfo.DEVICE_TYPE;
 import com.idtechproducts.device.ResDataStruct;
 import com.idtechproducts.device.StructConfigParameters;
+import com.idtechproducts.device.audiojack.UMLog;
+import com.idtechproducts.device.audiojack.tools.FirmwareUpdateTool;
+import com.idtechproducts.device.audiojack.tools.FirmwareUpdateToolMsg;
 import com.idtechproducts.device.bluetooth.BluetoothLEController;
 
 import android.annotation.SuppressLint;
@@ -44,7 +52,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
@@ -99,6 +109,20 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             case R.id.action_switch_reader_type:
                 mainView.openReaderSelectDialog();
                 break;
+            case R.id.action_enable_log:
+                boolean toEnable = !item.isChecked();
+                item.setChecked(toEnable);
+                mainView.enableLogFeature(toEnable);
+                break;
+            case R.id.action_delete_log:
+                mainView.deleteLogs();
+                break;
+            case R.id.action_firmware_update_init:
+                mainView.openReaderSelectDialogForFwUpdate();
+                break;
+            case R.id.action_firmware_update:
+                mainView.continueFirmwareUpdate();
+                break;
             case R.id.action_exit_app:
                 mainView.releaseSDK();
                 finish();
@@ -109,10 +133,13 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
 
     @SuppressLint("ValidFragment")
-    public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener, HasManualTokenizingSupport {
-        private final long BLE_ScanTimeout = 35000; //in milliseconds
+    public class SdkDemoFragment extends Fragment implements PublicOnReceiverListener, HasManualTokenizingSupport, FirmwareUpdateToolMsg {
+        private final long BLE_ScanTimeout = 20000; //in milliseconds
+
+        private boolean isBluetoothScanning = false;
 
         private VP3300 device;
+        private FirmwareUpdateTool fwTool;
         private ManualCardTokenizer manualCardTokenizer;
         private static final int REQUEST_ENABLE_BT = 1;
         private long totalEMVTime;
@@ -139,10 +166,24 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private StructConfigParameters config = null;
         private EditText edtSelection;
 
+        private boolean isFwInitDone = false;
+
         private Button swipeButton;
         private Button manualButton;
         private Button commandBtn;
         private final int emvTimeout = 30;
+
+        private int numTimesAttemptedToConfigureReader = 0;
+        private int maxTimesToConfigureReader = 5;
+
+        private DemoApplicationContext demoApplicationContext;
+
+
+        //To take control of configuration (default is to auto configure the reader
+        //1 - set disableAutoConfiguration to false in ApplicationContext
+        //2 - set applyClearentConfiguration to true
+
+        private boolean applyClearentConfiguration = false;
 
         private boolean btleDeviceRegistered = false;
         private String btleDeviceAddress = "00:1C:97:14:FD:34";
@@ -213,6 +254,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             super.onActivityCreated(savedInstanceState);
         }
 
+
         @Override
         public void onDestroy() {
             if (device != null) {
@@ -224,9 +266,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         @Override
         public void isReady() {
+            applyClearentConfiguration = false;
             swipeButton.setEnabled(true);
             commandBtn.setEnabled(true);
-            info += "Card reader is ready for use.\n";
+            info += "\nCard reader is ready for use.\n";
             handler.post(doUpdateStatus);
         }
 
@@ -238,7 +281,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     info += "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
 
                     ResDataStruct resData = new ResDataStruct();
-                   // completeTransaction(resData);
+                    // completeTransaction(resData);
 
                     handler.post(doUpdateStatus);
                     if (alertSwipe != null && alertSwipe.isShowing()) {
@@ -297,10 +340,17 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         @Override
         public void handleConfigurationErrors(String message) {
-            info += "\nThe reader failed to configure. Error - " + message;
-            handler.post(doUpdateStatus);
-            swipeButton.setEnabled(false);
-            commandBtn.setEnabled(false);
+            if (device.device_getDeviceType() == DEVICE_TYPE.DEVICE_VP3300_BT && applyClearentConfiguration && numTimesAttemptedToConfigureReader < maxTimesToConfigureReader) {
+                info += "\nThe reader failed to configure. Error - " + message + ". Attempt " + numTimesAttemptedToConfigureReader + "\n";
+                handler.post(doUpdateStatus);
+                numTimesAttemptedToConfigureReader++;
+                device.applyClearentConfiguration();
+            } else {
+                info += "\nThe reader failed to configure. Error - " + message;
+                handler.post(doUpdateStatus);
+                swipeButton.setEnabled(false);
+                commandBtn.setEnabled(false);
+            }
         }
 
         private void runSampleTransaction(TransactionToken transactionToken) {
@@ -323,6 +373,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void initializeReader() {
+
             if (device != null) {
                 releaseSDK();
             }
@@ -330,10 +381,18 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             manualCardTokenizer = new ManualCardTokenizerImpl(this);
 
             //Gather the context needed to get a device object representing the card reader.
-            DemoApplicationContext demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), getPaymentsBaseUrl(), getPaymentsPublicKey(), getIDTechAndroidDeviceConfigurationXmlFile());
-            //DemoApplicationContext demoApplicationContext = new DemoApplicationContext(DEVICE_TYPE.DEVICE_VP3300_BT, this, getActivity(), getPaymentsBaseUrl(), getPaymentsPublicKey(), getIDTechAndroidDeviceConfigurationXmlFile());
+            demoApplicationContext = new DemoApplicationContext(ReaderInfo.DEVICE_TYPE.DEVICE_VP3300_AJ, this, getActivity(), getPaymentsBaseUrl(), getPaymentsPublicKey(), null);
             device = DeviceFactory.getVP3300(demoApplicationContext);
-            //device.device_configurePeripheralAndConnect();
+
+            //Enable verbose logging only when instructed to by support.
+            device.log_setVerboseLoggingEnable(false);
+
+            //reset the shared preference so we can test applying the configuration again.
+            //device.setReaderConfiguredSharedPreference(false);
+
+            fwTool = new FirmwareUpdateTool(this, getActivity());
+
+
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
             displaySdkInfo();
         }
@@ -352,10 +411,14 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     switch (which) {
 
                         case 0:
-                            if (device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_AJ))
+                            if (device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_AJ)) {
                                 Toast.makeText(getActivity(), "VP3300 Audio Jack (Audio Jack) is selected", Toast.LENGTH_SHORT).show();
-                            else
+                                applyClearentConfiguration = true;
+                                btleDeviceRegistered = false;
+                                isBluetoothScanning = false;
+                            } else {
                                 Toast.makeText(getActivity(), "Failed. Please disconnect first.", Toast.LENGTH_SHORT).show();
+                            }
                             break;
                         case 1:
                             if (device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_AJ_USB))
@@ -372,12 +435,37 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                                 dlgBTLE_Name.setContentView(R.layout.btle_device_name_dialog);
                                 Button btnBTLE_Ok = (Button) dlgBTLE_Name.findViewById(R.id.btnSetBTLE_Name_Ok);
                                 edtBTLE_Name = (EditText) dlgBTLE_Name.findViewById(R.id.edtBTLE_Name);
-                                edtBTLE_Name.setText("IDTECH-VP3300-67467", TextView.BufferType.EDITABLE);
+                                String bleId = "IDTECH-VP3300-67467";
+                                try {
+                                    InputStream inputStream = getActivity().openFileInput("bleId.txt");
+
+                                    if (inputStream != null) {
+                                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                                        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                                        String receiveString = "";
+                                        StringBuilder stringBuilder = new StringBuilder();
+
+                                        while ((receiveString = bufferedReader.readLine()) != null) {
+                                            stringBuilder.append(receiveString);
+                                        }
+
+                                        inputStream.close();
+                                        bleId = stringBuilder.toString();
+                                    }
+                                } catch (FileNotFoundException e) {
+
+                                } catch (IOException e) {
+
+                                }
+                                edtBTLE_Name.setText(bleId);
+
                                 btnBTLE_Ok.setOnClickListener(setBTLE_NameOnClick);
                                 dlgBTLE_Name.show();
+                                applyClearentConfiguration = true;
+                                btleDeviceRegistered = false;
+                                isBluetoothScanning = false;
                             } else
                                 Toast.makeText(getActivity(), "Failed. Please disconnect first.", Toast.LENGTH_SHORT).show();
-                            //return;
                             break;
                         case 3:
                             if (device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_BT_USB))
@@ -410,17 +498,16 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 dlgBTLE_Name.dismiss();
                 Common.setBLEDeviceName(edtBTLE_Name.getText().toString());
 
+
                 try {
                     OutputStreamWriter outputStreamWriter = new OutputStreamWriter(getActivity().openFileOutput("bleId.txt", Context.MODE_PRIVATE));
                     outputStreamWriter.write(edtBTLE_Name.getText().toString());
                     outputStreamWriter.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
 
                 }
 
-                //Firmware update unsupported
-                //device.setIDT_Device(fwTool);
+                device.setIDT_Device(fwTool);
                 if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
                     Toast.makeText(getActivity(), "Bluetooth LE is not supported\r\n", Toast.LENGTH_LONG).show();
                     return;
@@ -432,7 +519,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     return;
                 }
                 btleDeviceRegistered = false;
-                if (mBtAdapter == null || !mBtAdapter.isEnabled()) {
+                isBluetoothScanning = false;
+
+                if (!mBtAdapter.isEnabled()) {
+                    Log.i("CLEARENT", "Adapter");
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
                 } else {
@@ -448,7 +538,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                     if (resultCode == Activity.RESULT_OK) {
                         Toast.makeText(getActivity(), "Bluetooth has turned on, now searching for device", Toast.LENGTH_SHORT).show();
-                        //start scanning
+                        isBluetoothScanning = true;
                         scanLeDevice(true, BLE_ScanTimeout);
                     } else {
                         // User did not enable Bluetooth or an error occurred
@@ -466,6 +556,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 handler.postDelayed(new Runnable() {
                     public void run() {
                         mBtAdapter.stopLeScan(mLeScanCallback);
+                        isBluetoothScanning = false;
                     }
                 }, timeout);
                 mBtAdapter.startLeScan(mLeScanCallback);
@@ -478,49 +569,164 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 new BluetoothAdapter.LeScanCallback() {
                     public void onLeScan(final BluetoothDevice btledevice, int rssi,
                                          byte[] scanRecord) {
+                        String BLE_Id = Common.getBLEDeviceName();
 
-                       runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                String BLE_Id = Common.getBLEDeviceName();
-                                if (BLE_Id != null) {
-                                    if (BLE_Id.length() == 17 && BLE_Id.charAt(2) == ':' && BLE_Id.charAt(5) == ':' && BLE_Id.charAt(8) == ':' &&
-                                            BLE_Id.charAt(11) == ':' && BLE_Id.charAt(14) == ':')  //search by address
-                                    {
-                                        String deviceAddress = btledevice.getAddress();
-                                        if (deviceAddress != null && deviceAddress.equalsIgnoreCase(BLE_Id))  //found the device by address
-                                        {
-                                            BluetoothLEController.setBluetoothDevice(btledevice);
-                                            btleDeviceAddress = deviceAddress;
-                                            if (!btleDeviceRegistered) {
-                                                device.registerListen();
-                                                btleDeviceRegistered = true;
-                                            }
-                                        }
-                                    } else  //search by name
-                                    {
-                                        String deviceName = btledevice.getName();
-                                        String deviceAddress = btledevice.getAddress();
-                                        //if (!btleDeviceRegistered && deviceName != null && deviceName.startsWith(BLE_Id))  //found the device by name
-                                        if (deviceName != null && deviceName.equals(BLE_Id))  //found the device by name
-                                        {
-                                            BluetoothLEController.setBluetoothDevice(btledevice);
-                                            btleDeviceAddress = btledevice.getAddress();
-                                            if (!btleDeviceRegistered) {
-                                                btleDeviceRegistered = true;
-                                                info += "\n";
-                                                info += "Bluetooth device (" + deviceAddress + ") is paired with App. Registering bluetooth device with Clearent framework\n";
-                                                handler.post(doUpdateStatus);
-                                                device.registerListen();
-                                            }
-                                        }
+                        if (BLE_Id != null) {
+                            if (BLE_Id.length() == 17 && BLE_Id.charAt(2) == ':' && BLE_Id.charAt(5) == ':' && BLE_Id.charAt(8) == ':' &&
+                                    BLE_Id.charAt(11) == ':' && BLE_Id.charAt(14) == ':')  //search by address
+                            {
+                                String deviceAddress = btledevice.getAddress();
+                                if (deviceAddress != null && deviceAddress.equalsIgnoreCase(BLE_Id))  //found the device by address
+                                {
+                                    BluetoothLEController.setBluetoothDevice(btledevice);
+                                    btleDeviceAddress = deviceAddress;
+                                    if (!btleDeviceRegistered) {
+                                        device.registerListen();
+                                        btleDeviceRegistered = true;
+                                    }
+                                }
+                            } else  //search by name
+                            {
+                                String deviceName = btledevice.getName();
+                                if (!btleDeviceRegistered && deviceName != null && deviceName.equals(BLE_Id))  //found the device by name
+                                {
+                                    BluetoothLEController.setBluetoothDevice(btledevice);
+                                    btleDeviceAddress = btledevice.getAddress();
+                                    if (!btleDeviceRegistered) {
+                                        info += "\nIdTech device found. Register\n";
+                                        device.registerListen();
+                                        btleDeviceRegistered = true;
                                     }
                                 }
                             }
-                        });
+                        }
                     }
                 };
 
+        private String[] fw_commands = null;
+
+        void openReaderSelectDialogForFwUpdate() {
+            if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_AJ_USB && device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_USB &&
+                    device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT_USB && device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_COM) {
+                Toast.makeText(getActivity(), "Only support VP3300 through USB and RS232", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if (isFwInitDone) {
+                Toast.makeText(getActivity(), "FW update initialization was done, please update FW now", Toast.LENGTH_LONG).show();
+                return;
+            }
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle("Select a device:");
+            builder.setCancelable(true);
+
+            builder.setItems(R.array.fw_reader_type, new DialogInterface.OnClickListener() {
+
+                public void onClick(DialogInterface dialog, int which) {
+
+                    String fileNames[] = {"vp3300_aj_firmware_064.txt", "vp3300_bt_firmware_090.txt", "IDT_Firmware_VP3300_USB.txt", "IDT_Firmware_VP3300_COM.txt"};
+
+                    // to refer to the application path
+                    File fileDir = getActivity().getFilesDir();
+                    String fileName = fileDir.getParent() + java.io.File.separator + fileDir.getName();
+                    // String path = Environment.getExternalStorageDirectory().toString();
+                    String fileNameWithPath = fileName + java.io.File.separator + fileNames[which];
+                    info += "fileNameWithPath: " + fileNameWithPath + "";
+                    fw_commands = getStringArrayFromFirmwareTXTFile(fileNameWithPath);
+
+                    if (fw_commands == null || fw_commands.length == 0) {
+                        Toast.makeText(getActivity(), "Please check if \"" + fileNames[which] + "\" is located in the root directory.", Toast.LENGTH_LONG).show();
+                        return;
+                    } else {
+                        int i;
+                        for (i = 0; i < fw_commands.length; i++) {
+                            if (fw_commands[i] != null)
+                                break;
+                        }
+                        if (i == fw_commands.length) {
+                            Toast.makeText(getActivity(), "Please check if \"" + fileNames[which] + "\" contains correct data.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+
+                    int ret = device.device_updateFirmware(fw_commands);
+                    if (ret == ErrorCode.SUCCESS) {
+                        info = "Initialize firmware update...";
+                        detail = "Please do not unplug the reader.";
+                        swipeButton.setEnabled(false);
+                        commandBtn.setEnabled(false);
+                        Toast.makeText(getActivity(), "FW update started initialization.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        info += "updatefirmware failed: " + device.device_getResponseCodeString(ret) + "";
+                        Toast.makeText(getActivity(), "FW update initialization cannot be started.", Toast.LENGTH_LONG).show();
+                        detail = "";
+                    }
+                    handler.post(doUpdateStatus);
+                }
+            });
+            builder.create().show();
+        }
+
+        private String[] getStringArrayFromFirmwareTXTFile(String strFilePathName) {
+
+            File file = new File(strFilePathName);
+            if (file.exists() == false)
+                return null;
+
+            String[] cmds;
+            int count = 0;
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader(file));
+                String line = "";
+
+                while ((line = br.readLine()) != null && !line.equalsIgnoreCase("END>")) {
+                    count++;
+                }
+                count++;
+                br.close();
+                br = null;
+
+                br = new BufferedReader(new FileReader(file));
+                line = "";
+
+                cmds = new String[count];
+
+                for (int i = 0; i < count; i++) {
+                    line = br.readLine();
+                    if (line != null)
+                        cmds[i] = new String(line);
+                }
+            } catch (IOException e) {
+                return null;
+            } finally {
+                try {
+                    if (br != null)
+                        br.close();
+                } catch (Exception ex) {
+                    return null;
+                }
+            }
+            return cmds;
+        }
+
+        void continueFirmwareUpdate() {
+            if (!Common.getBootLoaderMode()) {
+                Toast.makeText(getActivity(), "Please initialize firmware update first.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            int ret = device.device_updateFirmware(fw_commands);
+            if (ret == ErrorCode.SUCCESS) {
+                swipeButton.setEnabled(false);
+                commandBtn.setEnabled(false);
+                Toast.makeText(getActivity(), "FW update started.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getActivity(), "FW update cannot be started.", Toast.LENGTH_LONG).show();
+                detail = "";
+                handler.post(doUpdateStatus);
+            }
+        }
 
         Dialog dlgMenu;
         Dialog dlgLanguageMenu;
@@ -538,7 +744,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 }
                 getActivity().runOnUiThread(new Runnable() {
                     public void run() {
-                        if(lines[0].contains("TIME OUT")) {
+                        if (lines[0].contains("TIME OUT")) {
                             swipeButton.setEnabled(true);
                             commandBtn.setEnabled(true);
                         }
@@ -702,6 +908,25 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         }
 
+
+        public void enableLogFeature(boolean enable) {
+            if (device != null) {
+                device.log_setSaveLogEnable(enable);
+            }
+
+            if (enable)
+                Toast.makeText(getActivity(), "Log feature enabled", Toast.LENGTH_SHORT).show();
+            else
+                Toast.makeText(getActivity(), "Log feature disabled", Toast.LENGTH_SHORT).show();
+        }
+
+        public void deleteLogs() {
+            if (device != null) {
+                int fileDeleted = device.log_deleteLogs();
+                Toast.makeText(getActivity(), "Total of " + fileDeleted + " files are deleted.", Toast.LENGTH_SHORT).show();
+            }
+        }
+
         public void displaySdkInfo() {
             info += "Manufacturer: " + android.os.Build.MANUFACTURER + "\n" +
                     "Model: " + android.os.Build.MODEL + "\n" +
@@ -748,7 +973,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         private boolean startSwipe = false;
 
-        public String getTestApiKey(){
+        public String getTestApiKey() {
             return "24425c33043244778a188bd19846e860";
         }
 
@@ -762,7 +987,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             return "307a301406072a8648ce3d020106092b240303020801010c036200042b0cfb3a1faaca8fb779081717a0bafb03e0cb061a1ef297f75dc5b951aaf163b0c2021e9bb73071bf89c711070e96ab1b63c674be13041d9eb68a456eb6ae63a97a9345c120cd8bff1d5998b2ebbafc198c5c5b26c687bfbeb68b312feb43bf";
         }
 
-        private class SwipeButtonListener implements OnClickListener {
+        public class SwipeButtonListener implements OnClickListener {
             public void onClick(View arg0) {
                 int ret;
                 startSwipe = true;
@@ -1065,16 +1290,36 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 handler.post(doUpdateStatus);
             }
             Toast.makeText(getActivity(), "Reader Connected", Toast.LENGTH_LONG).show();
+
+            if (applyClearentConfiguration) {
+                long waitBeforeAttemptingConfiguration = 100;
+                if (isBluetoothScanning) {
+                    waitBeforeAttemptingConfiguration = 8000;
+                }
+                handler.postDelayed(new Runnable() {
+                    public void run() {
+                        if (applyClearentConfiguration) {
+                            numTimesAttemptedToConfigureReader++;
+                            device.applyClearentConfiguration();
+                        }
+                    }
+                }, waitBeforeAttemptingConfiguration);
+            }
+
         }
 
         public void deviceDisconnected() {
             if (alertSwipe != null)
                 if (alertSwipe.isShowing())
                     alertSwipe.dismiss();
-            status.setText("Disconnected");
 
-            swipeButton.setEnabled(false);
-            commandBtn.setEnabled(false);
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    status.setText("Disconnected");
+                    swipeButton.setEnabled(false);
+                    commandBtn.setEnabled(false);
+                }
+            });
 
             if (!Common.getBootLoaderMode()) {
                 info += "Reader is disconnected";
@@ -1105,7 +1350,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void msgToConnectDevice() {
-            info += "\nIDTech is connected but Clearent still needs to apply EMV configuration...\n";
+            info += "\nConnect device...\n";
             detail = "";
             handler.post(doUpdateStatus);
         }
@@ -1115,6 +1360,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             detail = "";
             handler.post(doUpdateStatus);
         }
+
+        public void onReceiveMsgChallengeResult(int returnCode, byte[] data) {
+            // Not called for UniPay Firmware update
+        }
+
 
         public void LoadXMLConfigFailureInfo(int index, String strMessage) {
             info += "XML loading error...";
@@ -1150,12 +1400,159 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void dataInOutMonitor(byte[] data, boolean isIncoming) {
-             //monitor for debugging and support purposes only.
+            //monitor for debugging and support purposes only.
+        }
+
+        @Override
+        public void autoConfigProgress(int i) {
+            Log.i("WATCH", "autoConfigProgress");
+        }
+
+        @Override
+        public void autoConfigCompleted(StructConfigParameters structConfigParameters) {
+            Log.i("WATCH", "autoConfigCompleted");
+        }
+
+        @Override
+        public void deviceConfigured() {
+            Log.i("WATCH", "device is configured");
+
+        }
+
+
+        public void onReceiveMsgUpdateFirmwareProgress(int nProgressValue) {
+            if (Common.getBootLoaderMode())
+                info = "Firmware update is in process... (" + nProgressValue + "%)";
+            else
+                info = "Firmware update initialization is in process...";
+            handler.post(doUpdateStatus);
+        }
+
+        public void onReceiveMsgUpdateFirmwareResult(final int result) {
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    switch (result) {
+                        case FirmwareUpdateToolMsg.cmdUpdateFirmware_Succeed:
+                            info = "Firmware update is done successfully...";
+                            detail = "";
+                            isFwInitDone = false;
+                            break;
+                        case FirmwareUpdateToolMsg.cmdInitializeUpdateFirmware_Succeed:
+                            if (device.device_getDeviceType() == DEVICE_TYPE.DEVICE_KIOSK_III)
+                                info = "Firmware update initialization is done successfully, please wait for device reconnection and do firmware update.";
+                            else
+                                info = "Firmware update initialization is done successfully, please do firmware update now.";
+                            isFwInitDone = true;
+                            break;
+                        case FirmwareUpdateToolMsg.cmdUpdateFirmware_Timeout:
+                            if (Common.getBootLoaderMode()) {
+                                info = "Firmware update timeout... Please try firmware update again...";
+                                detail = "";
+                            } else {
+                                info = "Firmware update initialization timeout... Please try again...";
+                            }
+                            break;
+                        case FirmwareUpdateToolMsg.cmdUpdateFirmware_DownloadBlockFailed:
+                            info = "Firmware update failed... Please try again...";
+                            detail = "";
+
+                            break;
+                    }
+                    swipeButton.setEnabled(true);
+                    commandBtn.setEnabled(true);
+                    handler.post(doUpdateStatus);
+
+                }
+
+            });
+        }
+
+        private String emvErrorCodes(int val) {
+            if (val == IDTEMVData.APPROVED_OFFLINE) return "APPROVED_OFFLINE";
+            if (val == IDTEMVData.DECLINED_OFFLINE) return "DECLINED_OFFLINE";
+            if (val == IDTEMVData.APPROVED) return "APPROVED";
+            if (val == IDTEMVData.DECLINED) return "DECLINED";
+            if (val == IDTEMVData.GO_ONLINE) return "GO_ONLINE";
+            if (val == IDTEMVData.CALL_YOUR_BANK) return "CALL_YOUR_BANK";
+            if (val == IDTEMVData.NOT_ACCEPTED) return "NOT_ACCEPTED";
+            if (val == IDTEMVData.USE_MAGSTRIPE) return "USE_MAGSTRIPE";
+            if (val == IDTEMVData.TIME_OUT) return "TIME_OUT";
+            if (val == IDTEMVData.START_TRANS_SUCCESS) return "START_TRANS_SUCCESS";
+            if (val == IDTEMVData.MSR_SUCCESS) return "MSR_SUCCESS";
+            if (val == IDTEMVData.TRANSACTION_CANCELED) return "TRANSACTION_CANCELED";
+            if (val == IDTEMVData.CTLS_TWO_CARDS) return "CTLS_TWO_CARDS";
+            if (val == IDTEMVData.CTLS_TERMINATE) return "CTLS_TERMINATE";
+            if (val == IDTEMVData.CTLS_TERMINATE_TRY_ANOTHER) return "CTLS_TERMINATE_TRY_ANOTHER";
+            if (val == IDTEMVData.MSR_SWIPE_CAPTURED) return "MSR_SWIPE_CAPTURED";
+            if (val == IDTEMVData.REQUEST_ONLINE_PIN) return "REQUEST_ONLINE_PIN";
+            if (val == IDTEMVData.REQUEST_SIGNATURE) return "REQUEST_SIGNATURE";
+            if (val == IDTEMVData.FALLBACK_TO_CONTACT) return "FALLBACK_TO_CONTACT";
+            if (val == IDTEMVData.FALLBACK_TO_OTHER) return "FALLBACK_TO_OTHER";
+            if (val == IDTEMVData.REVERSAL_REQUIRED) return "REVERSAL_REQUIRED";
+            if (val == IDTEMVData.ADVISE_REQUIRED) return "ADVISE_REQUIRED";
+            if (val == IDTEMVData.NO_ADVISE_REVERSAL_REQUIRED) return "NO_ADVISE_REVERSAL_REQUIRED";
+            if (val == IDTEMVData.UNABLE_TO_REACH_HOST) return "UNABLE_TO_REACH_HOST";
+            if (val == IDTEMVData.FILE_ARG_INVALID) return "FILE_ARG_INVALID";
+            if (val == IDTEMVData.FILE_OPEN_FAILED) return "FILE_OPEN_FAILED";
+            if (val == IDTEMVData.FILE_OPERATION_FAILED) return "FILE_OPERATION_FAILED";
+            if (val == IDTEMVData.MEMORY_NOT_ENOUGH) return "MEMORY_NOT_ENOUGH";
+            if (val == IDTEMVData.SMARTCARD_OK) return "SMARTCARD_OK";
+            if (val == IDTEMVData.SMARTCARD_FAIL) return "SMARTCARD_FAIL";
+            if (val == IDTEMVData.SMARTCARD_INIT_FAILED) return "SMARTCARD_INIT_FAILED";
+            if (val == IDTEMVData.FALLBACK_SITUATION) return "FALLBACK_SITUATION";
+            if (val == IDTEMVData.SMARTCARD_ABSENT) return "SMARTCARD_ABSENT";
+            if (val == IDTEMVData.SMARTCARD_TIMEOUT) return "SMARTCARD_TIMEOUT";
+            if (val == IDTEMVData.MSR_CARD_ERROR) return "MSR_CARD_ERROR";
+            if (val == IDTEMVData.PARSING_TAGS_FAILED) return "PARSING_TAGS_FAILED";
+            if (val == IDTEMVData.CARD_DATA_ELEMENT_DUPLICATE) return "CARD_DATA_ELEMENT_DUPLICATE";
+            if (val == IDTEMVData.DATA_FORMAT_INCORRECT) return "DATA_FORMAT_INCORRECT";
+            if (val == IDTEMVData.APP_NO_TERM) return "APP_NO_TERM";
+            if (val == IDTEMVData.APP_NO_MATCHING) return "APP_NO_MATCHING";
+            if (val == IDTEMVData.AMANDATORY_OBJECT_MISSING) return "AMANDATORY_OBJECT_MISSING";
+            if (val == IDTEMVData.APP_SELECTION_RETRY) return "APP_SELECTION_RETRY";
+            if (val == IDTEMVData.AMOUNT_ERROR_GET) return "AMOUNT_ERROR_GET";
+            if (val == IDTEMVData.CARD_REJECTED) return "CARD_REJECTED";
+            if (val == IDTEMVData.AIP_NOT_RECEIVED) return "AIP_NOT_RECEIVED";
+            if (val == IDTEMVData.AFL_NOT_RECEIVEDE) return "AFL_NOT_RECEIVEDE";
+            if (val == IDTEMVData.AFL_LEN_OUT_OF_RANGE) return "AFL_LEN_OUT_OF_RANGE";
+            if (val == IDTEMVData.SFI_OUT_OF_RANGE) return "SFI_OUT_OF_RANGE";
+            if (val == IDTEMVData.AFL_INCORRECT) return "AFL_INCORRECT";
+            if (val == IDTEMVData.EXP_DATE_INCORRECT) return "EXP_DATE_INCORRECT";
+            if (val == IDTEMVData.EFF_DATE_INCORRECT) return "EFF_DATE_INCORRECT";
+            if (val == IDTEMVData.ISS_COD_TBL_OUT_OF_RANGE) return "ISS_COD_TBL_OUT_OF_RANGE";
+            if (val == IDTEMVData.CRYPTOGRAM_TYPE_INCORRECT) return "CRYPTOGRAM_TYPE_INCORRECT";
+            if (val == IDTEMVData.PSE_BY_CARD_NOT_SUPPORTED) return "PSE_BY_CARD_NOT_SUPPORTED";
+            if (val == IDTEMVData.USER_LANGUAGE_SELECTED) return "USER_LANGUAGE_SELECTED";
+            if (val == IDTEMVData.SERVICE_NOT_ALLOWED) return "SERVICE_NOT_ALLOWED";
+            if (val == IDTEMVData.NO_TAG_FOUND) return "NO_TAG_FOUND";
+            if (val == IDTEMVData.CARD_BLOCKED) return "CARD_BLOCKED";
+            if (val == IDTEMVData.LEN_INCORRECT) return "LEN_INCORRECT";
+            if (val == IDTEMVData.CARD_COM_ERROR) return "CARD_COM_ERROR";
+            if (val == IDTEMVData.TSC_NOT_INCREASED) return "TSC_NOT_INCREASED";
+            if (val == IDTEMVData.HASH_INCORRECT) return "HASH_INCORRECT";
+            if (val == IDTEMVData.ARC_NOT_PRESENCED) return "ARC_NOT_PRESENCED";
+            if (val == IDTEMVData.ARC_INVALID) return "ARC_INVALID";
+            if (val == IDTEMVData.COMM_NO_ONLINE) return "COMM_NO_ONLINE";
+            if (val == IDTEMVData.TRAN_TYPE_INCORRECT) return "TRAN_TYPE_INCORRECT";
+            if (val == IDTEMVData.APP_NO_SUPPORT) return "APP_NO_SUPPORT";
+            if (val == IDTEMVData.APP_NOT_SELECT) return "APP_NOT_SELECT";
+            if (val == IDTEMVData.LANG_NOT_SELECT) return "LANG_NOT_SELECT";
+            if (val == IDTEMVData.TERM_DATA_NOT_PRESENCED) return "TERM_DATA_NOT_PRESENCED";
+            if (val == IDTEMVData.CVM_TYPE_UNKNOWN) return "CVM_TYPE_UNKNOWN";
+            if (val == IDTEMVData.CVM_AIP_NOT_SUPPORTED) return "CVM_AIP_NOT_SUPPORTED";
+            if (val == IDTEMVData.CVM_TAG_8E_MISSING) return "CVM_TAG_8E_MISSING";
+            if (val == IDTEMVData.CVM_TAG_8E_FORMAT_ERROR) return "CVM_TAG_8E_FORMAT_ERROR";
+            if (val == IDTEMVData.CVM_CODE_IS_NOT_SUPPORTED) return "CVM_CODE_IS_NOT_SUPPORTED";
+            if (val == IDTEMVData.CVM_COND_CODE_IS_NOT_SUPPORTED)
+                return "CVM_COND_CODE_IS_NOT_SUPPORTED";
+            if (val == IDTEMVData.CVM_NO_MORE) return "CVM_NO_MORE";
+            if (val == IDTEMVData.PIN_BYPASSED_BEFORE) return "PIN_BYPASSED_BEFORE";
+            if (val == IDTEMVData.UNKONWN) return "UNKONWN";
+            return "";
         }
 
         public void msgBatteryLow() {
-            // TODO Auto-generated method stub
-
+            Log.i("WATCH", "msgBatteryLow");
         }
     }
 

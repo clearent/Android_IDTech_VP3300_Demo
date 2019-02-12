@@ -54,6 +54,13 @@ public class DemoApplicationContext implements ApplicationContext {
         return idTechXmlConfigurationFileLocation;
     }
 
+    @Override
+    public boolean disableAutoConfiguration() {
+        //return true;
+        //testing audio jack reader default auto configuration
+        return false;
+    }
+
     public void setIdTechXmlConfigurationFileLocation(String idTechXmlConfigurationFileLocation) {
         this.idTechXmlConfigurationFileLocation = idTechXmlConfigurationFileLocation;
     }
