@@ -178,11 +178,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         private DemoApplicationContext demoApplicationContext;
 
-
         //To take control of configuration (default is to auto configure the reader
         //1 - set disableAutoConfiguration to false in ApplicationContext
         //2 - set applyClearentConfiguration to true
-
         private boolean applyClearentConfiguration = false;
 
         private boolean btleDeviceRegistered = false;
@@ -385,7 +383,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             device = DeviceFactory.getVP3300(demoApplicationContext);
 
             //Enable verbose logging only when instructed to by support.
-            device.log_setVerboseLoggingEnable(false);
+            device.log_setVerboseLoggingEnable(true);
 
             //reset the shared preference so we can test applying the configuration again.
             //device.setReaderConfiguredSharedPreference(false);
@@ -737,6 +735,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         int finalTimout;
 
         public void lcdDisplay(int mode, final String[] lines, int timeout) {
+
+
             if (lines != null && lines.length > 0) {
                 //framework notifies both methods. Removing dups.
                 if (lines[0].contains("SWIPE OR INSERT") || lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE") || lines[0].contains("TERMINATE") || lines[0].contains("USE MAGSTRIPE")) {
@@ -994,7 +994,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 totalEMVTime = System.currentTimeMillis();
                 textAmount = (EditText) findViewById(R.id.textAmount);
 
-                ret = device.device_startTransaction(1.00, 0.00, 0, 30, null);
+                byte tags[] = {(byte)0xDF, (byte)0xEF, 0x37, 0x01, 0x05};
+                ret = device.device_startTransaction(1.00, 0.00, 0, 30, tags);
 
                 swipeButton.setEnabled(false);
                 commandBtn.setEnabled(false);
