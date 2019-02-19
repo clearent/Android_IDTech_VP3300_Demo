@@ -994,8 +994,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 totalEMVTime = System.currentTimeMillis();
                 textAmount = (EditText) findViewById(R.id.textAmount);
 
-                byte tags[] = {(byte)0xDF, (byte)0xEF, 0x37, 0x01, 0x05};
-                ret = device.device_startTransaction(1.00, 0.00, 0, 30, tags);
+               // byte tags[] = {(byte)0xDF, (byte)0xEF, 0x37, 0x01, 0x05};
+                ret = device.device_startTransaction(1.00, 0.00, 0, 30, null);
 
                 swipeButton.setEnabled(false);
                 commandBtn.setEnabled(false);
