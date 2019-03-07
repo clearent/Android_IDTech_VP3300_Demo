@@ -12,14 +12,14 @@
     	<TextView
     		android:layout_width="match_parent"
     		android:layout_height="wrap_content"
-    		android:text="Please enter BTLE device name or address" />
+    		android:text="Enter last 5 digits of device serial number (todo show image example) for fast search or leave empty to search for any device with IDTECH in the name" />
         
     	<EditText
     		android:id="@+id/edtBTLE_Name"
     		android:layout_width="match_parent"
     		android:layout_height="wrap_content"
     		android:text="" />
- 
+
     	<Button
     		android:id="@+id/btnSetBTLE_Name_Ok"
     		android:layout_width="match_parent"

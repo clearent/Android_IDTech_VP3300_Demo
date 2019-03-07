@@ -6,8 +6,8 @@ android {
 
     defaultConfig {
         applicationId "com.idtechproducts.device.sdkdemo"
-        minSdkVersion 18
-        targetSdkVersion 18
+        minSdkVersion 21
+        targetSdkVersion 21
     }
 
     buildTypes {
@@ -19,7 +19,7 @@ android {
 }
 
 dependencies {
-    implementation files('libs/clearent-idtech-android-105-1.0.9.jar')
+    implementation files('libs/clearent-idtech-android-109-1.0.14.jar')
     implementation 'com.android.support:appcompat-v7:22.2.1'
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation files('libs/Universal_SDK_1.00.105.jar')
