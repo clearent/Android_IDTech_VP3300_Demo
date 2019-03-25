@@ -747,6 +747,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     if (storedDeviceSerialNumberOfConfiguredReader.contains(last5)) {
                         Log.i("WATCH", "The device we found during scanning has been configured from this device");
                     }
+                    //if this is enabeld we need to rework some of the demo that will crash
+                    //because it's running on a worked thread
+                    //registerListenInNewThreadToAvoidBlockingUIThread();
                     device.registerListen();
                     btleDeviceRegistered = true;
                 } else {
@@ -776,6 +779,25 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 handler.post(doUpdateStatus);
             }
         };
+
+
+        private void registerListenInNewThreadToAvoidBlockingUIThread()
+
+        {
+
+            new Thread(new Runnable() {
+
+                public void run() {
+
+                    device.registerListen();
+
+                    btleDeviceRegistered = true;
+
+                }
+
+            }).start();
+
+        }
 
         private String[] fw_commands = null;
 
@@ -1536,17 +1558,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         }
 
-        private void confirmIsReadyDialog() {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setMessage("Reader is ready for use")
-                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int id) {
-                            handler.post(doEnableButtons);
-                        }
-                    })
-                    .show();
-        }
+
 
 
         public void deviceDisconnected() {
