@@ -14,6 +14,7 @@ public class DemoApplicationContext implements ApplicationContext {
     private String paymentsBaseUrl;
     private String paymentsPublicKey;
     private String idTechXmlConfigurationFileLocation;
+    private Boolean autoConfiguration = false;
 
     public DemoApplicationContext(ReaderInfo.DEVICE_TYPE deviceType, PublicOnReceiverListener publicOnReceiverListener, Context context, String paymentsBaseUrl, String paymentsPublicKey, String idTechXmlConfigurationFileLocation) {
         this.deviceType = deviceType;
@@ -56,12 +57,10 @@ public class DemoApplicationContext implements ApplicationContext {
 
     @Override
     public boolean disableAutoConfiguration() {
-        //return true;
-        //testing audio jack reader default auto configuration
-        return false;
+        return !autoConfiguration;
     }
 
-    public void setIdTechXmlConfigurationFileLocation(String idTechXmlConfigurationFileLocation) {
-        this.idTechXmlConfigurationFileLocation = idTechXmlConfigurationFileLocation;
+    public void setAutoConfiguration(Boolean autoConfiguration) {
+        this.autoConfiguration = autoConfiguration;
     }
 }

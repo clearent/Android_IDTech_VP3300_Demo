@@ -8,7 +8,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Auto Authentication" />
-        
+
     <CheckBox android:id="@+id/checkbox_comp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

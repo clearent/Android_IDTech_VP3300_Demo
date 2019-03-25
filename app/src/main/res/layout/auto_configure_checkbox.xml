@@ -1,0 +1,20 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" >
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+    <CheckBox android:id="@+id/checkboxAutoConfigure"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Auto Configure"
+        android:checked="false"/>
+
+    <CheckBox android:id="@+id/clearReaderCache"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clear Reader Cache"
+        android:checked="false"/>
+    </LinearLayout>
+</FrameLayout>
