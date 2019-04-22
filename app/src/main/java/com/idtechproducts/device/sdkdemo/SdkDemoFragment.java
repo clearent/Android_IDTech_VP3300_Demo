@@ -125,25 +125,25 @@ public class SdkDemoFragment extends Fragment implements PublicOnReceiverListene
 
     private String[] commands = {
             "Get Firmware Version",            // 0
-            "Get Serial Number",        // 1
-            "Send Command",                //2
-            "Get Global Configuration",                // 3
-            "Burst Mode On",        // 4
-            "Burst Mode Off",        // 5
-            "Auto Poll On",        // 6
-            "Auto Poll Off",        // 7
-            "Get Transaction Result",                // 8
-            "ICC - Power On",            // 9
-            "ICC - Power Off",            // 10
-            "ICC - Get Reader Status",    // 11
-            "ICC - Passthrough Mode On", //12
-            "ICC - Passthrough Mode Off", //13
-            "ICC - Exchange APDU Plaintext",    // 14
-            "EMV - Start Transaction",    // 15
-            "EMV - AID",    // 16
-            "EMV - CAPK", //17
-            "EMV - CRL", //18
-            "EMV - Terminal" //19
+            "Get Serial Number",               // 1
+            "Send Command",                    // 2
+            "Get Global Configuration",        // 3
+            "Burst Mode On",                   // 4
+            "Burst Mode Off",                  // 5
+            "Auto Poll On",                    // 6
+            "Auto Poll Off",                   // 7
+            "Get Transaction Result",          // 8
+            "ICC - Power On",                  // 9
+            "ICC - Power Off",                 // 10
+            "ICC - Get Reader Status",         // 11
+            "ICC - Passthrough Mode On",       // 12
+            "ICC - Passthrough Mode Off",      // 13
+            "ICC - Exchange APDU Plaintext",   // 14
+            "EMV - Start Transaction",         // 15
+            "EMV - AID",                       // 16
+            "EMV - CAPK",                      // 17
+            "EMV - CRL",                       // 18
+            "EMV - Terminal"                   // 19
     };
 
     @Override
