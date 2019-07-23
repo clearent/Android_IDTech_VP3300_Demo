@@ -1196,7 +1196,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private Runnable doSwipeProgressBar = new Runnable() {
             public void run() {
                 if (startTransaction) {
-                    int ret = device.device_startTransaction(1.00, 0.00, 0, 30, null);
+                    byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
+                    int ret = device.device_startTransaction(1.00, 0.00, 0, 60, null);
+                    //int ret = device.emv_startTransaction(1.00, 0.00, 0, emvTimeout, tags, false);
                     handler.post(doEnableButtons);
                     if (ret == ErrorCode.SUCCESS || ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
                         info = "Please swipe/tap a card\n";
