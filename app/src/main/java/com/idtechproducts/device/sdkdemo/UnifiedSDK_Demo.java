@@ -482,6 +482,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
             displaySdkInfo();
+
+            device.addRemoteLogRequest("Android_IDTech_VP3300_Demo","Initialized the VP3300");
         }
 
         private EditText edtBTLE_Name;
