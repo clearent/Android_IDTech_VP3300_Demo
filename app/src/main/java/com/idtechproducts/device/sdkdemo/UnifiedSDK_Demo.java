@@ -64,6 +64,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -191,7 +192,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private int bleRetryCount = 0;
 
         private boolean isReady = false;
-        private boolean readerBondedToDevice = false;
         private BluetoothDevice currentBluetoothDevice = null;
 
         private String currentBluetoothUUID = null;
@@ -290,6 +290,26 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         @Override
         public void isReady() {
+
+            WifiManager wifiManager = (WifiManager) getActivity().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+            System.out.println("is 5ghz supported" + wifiManager.is5GHzBandSupported());
+
+            System.out.println("is wifi enabled" + wifiManager.isWifiEnabled());
+
+// Level of a Scan Result
+            List<android.net.wifi.ScanResult> wifiList = wifiManager.getScanResults();
+            for (android.net.wifi.ScanResult scanResult : wifiList) {
+                System.out.println("Frequency is " + scanResult.frequency);
+                int level = WifiManager.calculateSignalLevel(scanResult.level, 5);
+                System.out.println("Level is " + level + " out of 5");
+            }
+
+// Level of current connection
+            int rssi = wifiManager.getConnectionInfo().getRssi();
+            int level = WifiManager.calculateSignalLevel(rssi, 5);
+            System.out.println("Level is " + level + " out of 5");
+
 
             applyClearentConfiguration = false;
             getActivity().runOnUiThread(new Runnable() {
@@ -456,7 +476,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             device.log_setSaveLogEnable(true);
 
             //reset the shared preference so we can test applying the configuration again.
-            // device.setReaderConfiguredSharedPreference(false);
+            //device.setReaderConfiguredSharedPreference(false);
 
             fwTool = new FirmwareUpdateTool(this, getActivity());
 
@@ -571,9 +591,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                     if (device.device_getDeviceType() == DEVICE_TYPE.DEVICE_VP3300_USB) {
                         handler.post(doEnableButtons);
-                        device.registerListen(3, 500);
+                        device.registerListen();
                     } else if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
-                        device.registerListen(3, 500);
+                        device.registerListen();
                         device.device_configurePeripheralAndConnect();
                     }
                 }
@@ -651,7 +671,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     if (device.device_isConnected()) {
                         btleDeviceRegistered = true;
                     } else {
-                        device.registerListen(3, 500);
+                        device.registerListen();
                     }
                 }
             } else {
@@ -683,7 +703,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                         if (device.device_isConnected()) {
                             btleDeviceRegistered = true;
                         } else {
-                            device.registerListen(3, 500);
+                            device.registerListen();
                         }
                     }
                 } else {
@@ -784,7 +804,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     if (storedDeviceSerialNumberOfConfiguredReader.contains(last5)) {
                         Log.i("WATCH", "The device we found during scanning has been configured from this device");
                     }
-                    device.registerListen(3, 500);
+                    device.registerListen();
                     btleDeviceRegistered = true;
                 } else {
                     Log.i("SCAN", "Skip " + result.getDevice().getName());
@@ -1174,13 +1194,13 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private Runnable doSwipeProgressBar = new Runnable() {
             public void run() {
                 if (startTransaction) {
-                    int ret = device.device_startTransaction(1.00, 0.00, 0, 30, null, 3, 500);
+                    int ret = device.device_startTransaction(1.00, 0.00, 0, 30, null);
                     handler.post(doEnableButtons);
                     if (ret == ErrorCode.SUCCESS || ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
                         info = "Please swipe/tap a card\n";
                         handler.post(doTransactionAlert);
                     } else if (!device.device_isConnected() && device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_BT)) {
-                        info = "Card reader is not connected. Press button, thdevice_starty\n";
+                        info = "Card reader is not connected. Press button,\n";
                         info += "Status: " + device.device_getResponseCodeString(ret) + "";
                         detail = "";
                         handler.post(doEnableButtons);
@@ -1202,6 +1222,8 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             public void run() {
                 infoText.setText(info);
                 if(transactionAlertDialog != null) {
+                    transactionAlertDialog.setTitle("Processing transaction");
+                    transactionAlertDialog.setMessage("If card has chip, insert card now. Otherwise try swipe.");
                     transactionAlertDialog.show();
                 } else {
                     AlertDialog.Builder transactionViewBuilder = new AlertDialog.Builder(getActivity());
