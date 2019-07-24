@@ -290,27 +290,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         @Override
         public void isReady() {
-
-            WifiManager wifiManager = (WifiManager) getActivity().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-            System.out.println("is 5ghz supported" + wifiManager.is5GHzBandSupported());
-
-            System.out.println("is wifi enabled" + wifiManager.isWifiEnabled());
-
-// Level of a Scan Result
-            List<android.net.wifi.ScanResult> wifiList = wifiManager.getScanResults();
-            for (android.net.wifi.ScanResult scanResult : wifiList) {
-                System.out.println("Frequency is " + scanResult.frequency);
-                int level = WifiManager.calculateSignalLevel(scanResult.level, 5);
-                System.out.println("Level is " + level + " out of 5");
-            }
-
-// Level of current connection
-            int rssi = wifiManager.getConnectionInfo().getRssi();
-            int level = WifiManager.calculateSignalLevel(rssi, 5);
-            System.out.println("Level is " + level + " out of 5");
-
-
             applyClearentConfiguration = false;
             getActivity().runOnUiThread(new Runnable() {
                 public void run() {
@@ -324,17 +303,11 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
             if (waitForReaderIsReadyProgressDialog != null && waitForReaderIsReadyProgressDialog.isShowing()) {
                 waitForReaderIsReadyProgressDialog.dismiss();
+                handler.post(doTransactionAlert);
+                handler.post(doStartTransaction);
             }
-            if (startTransaction && device.device_isConnected() && device.device_getDeviceType() == DEVICE_TYPE.DEVICE_VP3300_BT) {
-                handler.post(doSwipeProgressBar);
-            }
-            isReady = true;
 
-            if (device.device_isConnected()) {
-                Log.i("WATCH", "isReady called. Device is connected");
-            } else {
-                Log.i("WATCH", "Device is not connected in isReady");
-            }
+            isReady = true;
         }
 
         @Override
@@ -350,9 +323,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     commandBtn.setEnabled(true);
                 }
             });
-            //try release after every transaction, good or bad.
-            //releaseSDK();
-
             runSampleTransaction(transactionToken);
         }
 
@@ -483,7 +453,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             Toast.makeText(getActivity(), "get started", Toast.LENGTH_LONG).show();
             displaySdkInfo();
 
-            device.addRemoteLogRequest("Android_IDTech_VP3300_Demo","Initialized the VP3300");
+            device.addRemoteLogRequest("Android_IDTech_VP3300_Demo", "Initialized the VP3300");
         }
 
         private EditText edtBTLE_Name;
@@ -567,7 +537,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                                 btnBTLE_Ok.setOnClickListener(setBTLE_NameOnClick);
                                 dlgBTLE_Name.show();
-                                //applyClearentConfiguration = true;
                                 btleDeviceRegistered = false;
                                 isBluetoothScanning = false;
                             } else
@@ -620,7 +589,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 device.setIDT_Device(fwTool);
 
                 if (!isBleSupported(getActivity())) {
-                    //if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
                     Toast.makeText(getActivity(), "Bluetooth LE is not supported\r\n", Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -632,6 +600,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     Toast.makeText(getActivity(), "Bluetooth LE is not available\r\n", Toast.LENGTH_LONG).show();
                     return;
                 }
+
                 btleDeviceRegistered = false;
                 isBluetoothScanning = false;
 
@@ -649,12 +618,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             return BluetoothAdapter.getDefaultAdapter() != null && context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
         }
 
-
         public void onActivityResult(int requestCode, int resultCode, Intent data) {
             if (device.device_getDeviceType() == DEVICE_TYPE.DEVICE_VP3300_BT) {
-                // TODO Auto-generated method stub
                 if (requestCode == REQUEST_ENABLE_BT) {
-
                     if (resultCode == Activity.RESULT_OK) {
                         Toast.makeText(getActivity(), "Bluetooth has turned on, now searching for device", Toast.LENGTH_SHORT).show();
                         scanforDevice(true, BLE_ScanTimeout);
@@ -666,56 +632,16 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         }
 
-
         private void scanforDevice(final boolean enable, final long timeout) {
+            handler.post(doConnectReaderProgressBar);
             if (currentBluetoothDevice != null) {
-                if (!btleDeviceRegistered) {
-                    if (device.device_isConnected()) {
-                        btleDeviceRegistered = true;
-                    } else {
-                        device.registerListen();
-                    }
-                }
+                device.registerListen();
             } else {
-                Log.i("CLEARENT", "Scan for the device");
-                isBluetoothScanning = true;
+                btleDeviceRegistered = false;
                 bleRetryCount = 0;
-                boolean foundViaBonding = false;
-//
-//                Set<BluetoothDevice> bondedDevices = mBtAdapter.getBondedDevices();
-//
-//                Log.i("CLEARENT", "bonded devices size " + bondedDevices.size());
-//                for (Iterator<BluetoothDevice> it = bondedDevices.iterator(); it.hasNext(); ) {
-//                    BluetoothDevice bluetoothDevice = it.next();
-//                    if (bluetoothDevice.getName().contains("14958")) {
-//                        Log.i("SCAN", "Device is already bonded " + bluetoothDevice.getName());
-//                        if (!device.device_isConnected() && currentBluetoothDevice == null) {
-//                            currentBluetoothDevice = bluetoothDevice;
-//
-//                            foundViaBonding = true;
-//                        }
-//                    }
-//                    Log.i("CLEARENT", "bonded bluetoothDevice " + bluetoothDevice.getName());
-//                }
-
-                if (foundViaBonding) {
-                    BluetoothLEController.setBluetoothDevice(currentBluetoothDevice);
-                    btleDeviceAddress = currentBluetoothDevice.getAddress();
-                    if (!btleDeviceRegistered) {
-                        if (device.device_isConnected()) {
-                            btleDeviceRegistered = true;
-                        } else {
-                            device.registerListen();
-                        }
-                    }
-                } else {
-                    handler.post(doConnectReaderProgressBar);
-                    scanLeDevice(true, timeout);
-                }
+                scanLeDevice(true, timeout);
             }
-
         }
-
 
         Handler scanProgressBarHandle = new Handler() {
             @Override
@@ -766,7 +692,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                         .setReportDelay(0)
                         .build();
                 mBtAdapter.getBluetoothLeScanner().startScan(scanFilters, settings, scanCallback);
-                //is there a reconnect here mBtAdapter
             } else {
                 mBtAdapter.getBluetoothLeScanner().stopScan(scanCallback);
             }
@@ -820,7 +745,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 for (ScanResult sr : results) {
                     Log.i("ScanResult - Results", sr.toString());
                     info += "\nScanResult - Results" + sr.toString() + "\n";
-                    detail = "";
                     handler.post(doUpdateStatus);
                 }
             }
@@ -831,7 +755,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 System.out.println("BLE// onScanFailed");
                 Log.e("Scan Failed", "Error Code: " + errorCode);
                 info += "\nScan Failed. Error Code: " + errorCode + "\n";
-                detail = "";
                 handler.post(doUpdateStatus);
             }
         };
@@ -885,14 +808,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     int ret = device.device_updateFirmware(fw_commands);
                     if (ret == ErrorCode.SUCCESS) {
                         info = "Initialize firmware update...";
-                        detail = "Please do not unplug the reader.";
                         swipeButton.setEnabled(false);
                         commandBtn.setEnabled(false);
                         Toast.makeText(getActivity(), "FW update started initialization.", Toast.LENGTH_SHORT).show();
                     } else {
                         info += "updatefirmware failed: " + device.device_getResponseCodeString(ret) + "";
                         Toast.makeText(getActivity(), "FW update initialization cannot be started.", Toast.LENGTH_LONG).show();
-                        detail = "";
                     }
                     handler.post(doUpdateStatus);
                 }
@@ -971,32 +892,32 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         public void lcdDisplay(int mode, final String[] lines, int timeout) {
             if (lines != null && lines.length > 0) {
-                //framework notifies both methods. Removing dups.
-               /* if (lines[0].contains("SWIPE OR INSERT") || lines[0].contains("PLEASE WAIT") || lines[0].contains("PROCESSING") || lines[0].contains("GO ONLINE") || lines[0].contains("TERMINATE") || lines[0].contains("USE MAGSTRIPE")) {
-                    return;
-                }*/
                 getActivity().runOnUiThread(new Runnable() {
                     public void run() {
                         if (lines[0].contains("TIME OUT")) {
                             handler.post(doEnableButtons);
                         }
-                        transactionAlertDialog.setMessage(lines[0]);
                         info += "\n";
                         Log.i("WATCH1", lines[0]);
                         info += lines[0] + "\n";
                         handler.post(doUpdateStatus);
-                        String checkTransactionMessage = "Sample Transaction successful. Transaction Id:";
-                        String checkReceiptMessage = "Sample receipt sent successfully";
-                        String checkFailedTransactionFailed = "Sample transaction failed";
-                        if (lines[0].contains(checkFailedTransactionFailed)) {
-                            if (transactionAlertDialog != null && transactionAlertDialog.isShowing()) {
-                                transactionAlertDialog.dismiss();
-                            }
-                        } else if (lines[0].contains(checkTransactionMessage)) {
-                            runSampleReceipt(lines[0]);
-                        } else if (lines[0].contains(checkReceiptMessage)) {
-                            if (transactionAlertDialog != null && transactionAlertDialog.isShowing()) {
-                                transactionAlertDialog.dismiss();
+                        if (waitForReaderIsReadyProgressDialog != null && waitForReaderIsReadyProgressDialog.isShowing()) {
+                            waitForReaderIsReadyProgressDialog.setMessage(lines[0]);
+                        } else if (transactionAlertDialog != null && transactionAlertDialog.isShowing()) {
+                            transactionAlertDialog.setMessage(lines[0]);
+                            String checkTransactionMessage = "Sample Transaction successful. Transaction Id:";
+                            String checkReceiptMessage = "Sample receipt sent successfully";
+                            String checkFailedTransactionFailed = "Sample transaction failed";
+                            if (lines[0].contains(checkFailedTransactionFailed)) {
+                                if (transactionAlertDialog != null && transactionAlertDialog.isShowing()) {
+                                    transactionAlertDialog.dismiss();
+                                }
+                            } else if (lines[0].contains(checkTransactionMessage)) {
+                                runSampleReceipt(lines[0]);
+                            } else if (lines[0].contains(checkReceiptMessage)) {
+                                if (transactionAlertDialog != null && transactionAlertDialog.isShowing()) {
+                                    transactionAlertDialog.dismiss();
+                                }
                             }
                         }
                     }
@@ -1019,86 +940,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void lcdDisplay(int mode, String[] lines, int timeout, byte[] languageCode, byte messageId) {
-            type = (byte) mode;
-            theLines = lines;
-
-            if (theLines == null || theLines.length == 0) {
-                return;
-            }
-
-            finalTimout = timeout;
-            Language = languageCode;
-            MessageId = messageId;
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    if (type == 0x01) //Application Menu Display
-                    {
-                        dlgMenu = new Dialog(getActivity());
-                        dlgMenu.setTitle("Application Menu");
-                        dlgMenu.setCancelable(false);
-                        dlgMenu.setContentView(R.layout.emv_menu_display_dialog);
-                        TextView tv = new TextView(getActivity());
-                        tv = (TextView) dlgMenu.findViewById(R.id.tvApplication);
-                        String strApplication = "";
-                        for (int x = 0; x < theLines.length; x++) {
-                            strApplication = (strApplication + theLines[x] + "\r\n");
-                        }
-                        tv.setText(strApplication);
-
-                        edtSelection = (EditText) dlgMenu.findViewById(R.id.edtAppSelection);
-
-                        Button btnMenuDisplayOK = (Button) dlgMenu.findViewById(R.id.btnMenuDisplayOK);
-                        btnMenuDisplayOK.setOnClickListener(menuDisplayOKOnClick);
-                        dlgMenu.show();
-
-                        //wait for timeout
-                        dialogId = 3;
-                        timerDelayRemoveDialog((long) finalTimout * 1000, dlgMenu);
-                    } else if (type == 0x02) //Normal Display Get Function Key
-                    {
-
-                    } else if (type == 0x08) //Language Menu Display
-                    {
-                        //Open a language menu
-                        dlgLanguageMenu = new Dialog(getActivity());
-                        dlgLanguageMenu.setContentView(R.layout.language_menu);
-
-                        final ListView lv = (ListView) dlgLanguageMenu.findViewById(R.id.lvLanguage);
-
-                        final int[] lineNum = new int[theLines.length];
-
-                        for (int i = 0; i < theLines.length; i++) {
-                            lineNum[i] = Integer.valueOf(theLines[i].substring(0, 1));
-                        }
-
-                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), R.layout.single_row_textview,
-                                R.id.tvLanguage, theLines);
-
-                        lv.setAdapter(adapter);
-
-                        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                device.emv_lcdControlResponse((byte) 0x08, (byte) (lineNum[position] & 0xFF));
-                                dlgLanguageMenu.dismiss();
-                            }
-                        });
-
-                        dlgLanguageMenu.setCancelable(false);
-                        dlgLanguageMenu.setTitle("Select Language");
-                        dlgLanguageMenu.show();
-
-                        //wait for timeout
-                        dialogId = 2;
-                        timerDelayRemoveDialog((long) finalTimout * 1000, dlgLanguageMenu);
-                    } else {
-                        Log.i("WATCH2", theLines[0]);
-                        info += theLines[0] + "\n";
-                        handler.post(doUpdateStatus);
-                    }
-                }
-            });
+            //Clearent runs with a terminal major configuration of 5C, so no prompts. We should be able to
+            //monitor all messaging using the other lcdDisplay method as well as the response and error handlers.
         }
-
 
         private View.OnClickListener menuDisplayOKOnClick = new View.OnClickListener() {
             public void onClick(View v) {
@@ -1150,7 +994,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         }
 
-
         public void enableLogFeature(boolean enable) {
             if (device != null) {
                 device.log_setSaveLogEnable(enable);
@@ -1195,29 +1038,38 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         private Runnable doSwipeProgressBar = new Runnable() {
             public void run() {
-                if (startTransaction) {
-                    byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
-                    int ret = device.device_startTransaction(1.00, 0.00, 0, 60, null);
-                    //int ret = device.emv_startTransaction(1.00, 0.00, 0, emvTimeout, tags, false);
+                handler.post(doEnableButtons);
+                if (device.device_isConnected()) {
+                    handler.post(doTransactionAlert);
+                    handler.post(doStartTransaction);
+                } else {
+                    scanforDevice(true, BLE_ScanTimeout);
+                }
+            }
+        };
+
+        private Runnable doStartTransaction = new Runnable() {
+            @Override
+            public void run() {
+                byte tags[] = {(byte) 0xDF, (byte) 0xEF, 0x1F, 0x02, 0x01, 0x00};
+                int ret = device.device_startTransaction(1.00, 0.00, 0, 60, null);
+                //int ret = device.emv_startTransaction(1.00, 0.00, 0, emvTimeout, tags, false);
+                if (ret == ErrorCode.SUCCESS || ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
+                    transactionAlertDialog.setMessage("Insert card or try swipe...");
+                } else if (!device.device_isConnected() && device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_BT)) {
+                    transactionAlertDialog.setMessage("Card reader is not connecting. Check for low battery amber light or press button to try again");
+                    info = "Card reader is not connected. Press button,\n";
+                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
                     handler.post(doEnableButtons);
-                    if (ret == ErrorCode.SUCCESS || ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
-                        info = "Please swipe/tap a card\n";
-                        handler.post(doTransactionAlert);
-                    } else if (!device.device_isConnected() && device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_BT)) {
-                        info = "Card reader is not connected. Press button,\n";
-                        info += "Status: " + device.device_getResponseCodeString(ret) + "";
-                        detail = "";
-                        handler.post(doEnableButtons);
-                        handler.post(doUpdateStatus);
-                        btleDeviceRegistered = false;
-                        scanforDevice(true, BLE_ScanTimeout);
-                    } else {
-                        info = "cannot swipe/tap card\n";
-                        info += "Status: " + device.device_getResponseCodeString(ret) + "";
-                        detail = "";
-                        handler.post(doEnableButtons);
-                        handler.post(doUpdateStatus);
-                    }
+                    handler.post(doUpdateStatus);
+                    btleDeviceRegistered = false;
+                    scanforDevice(true, BLE_ScanTimeout);
+                } else {
+                    transactionAlertDialog.setMessage("Card reader failed to process. Cancel and try again");
+                    info = "cannot swipe/tap card\n";
+                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
+                    handler.post(doEnableButtons);
+                    handler.post(doUpdateStatus);
                 }
             }
         };
@@ -1225,15 +1077,15 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private Runnable doTransactionAlert = new Runnable() {
             public void run() {
                 infoText.setText(info);
-                if(transactionAlertDialog != null) {
-                    transactionAlertDialog.setTitle("Processing transaction");
-                    transactionAlertDialog.setMessage("If card has chip, insert card now. Otherwise try swipe.");
+                if (transactionAlertDialog != null) {
+                    transactionAlertDialog.setTitle("Processing payment");
+                    transactionAlertDialog.setMessage("Wait for instructions...");
                     transactionAlertDialog.show();
                 } else {
                     AlertDialog.Builder transactionViewBuilder = new AlertDialog.Builder(getActivity());
 
-                    transactionViewBuilder.setTitle("Processing transaction");
-                    transactionViewBuilder.setMessage("If card has chip, insert card now. Otherwise try swipe.");
+                    transactionViewBuilder.setTitle("Processing payment");
+                    transactionViewBuilder.setMessage("Wait for instructions...");
                     transactionViewBuilder.setView(layoutInflater.inflate(R.layout.frame_swipe, viewGroup, false));
                     transactionViewBuilder.setCancelable(false);
                     transactionViewBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -1254,37 +1106,59 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         };
 
-
         private Runnable doConnectReaderProgressBar = new Runnable() {
             public void run() {
-                waitForReaderIsReadyProgressDialog = new ProgressDialog(getActivity());
-                waitForReaderIsReadyProgressDialog.setMax(120);
-                waitForReaderIsReadyProgressDialog.setTitle("Connecting reader");
-                waitForReaderIsReadyProgressDialog.setMessage("Scanning (press button)...");
-                waitForReaderIsReadyProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-                waitForReaderIsReadyProgressDialog.show();
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            while (waitForReaderIsReadyProgressDialog.getProgress() <= waitForReaderIsReadyProgressDialog
-                                    .getMax()) {
-                                Thread.sleep(500);
-                                scanProgressBarHandle.sendMessage(scanProgressBarHandle.obtainMessage());
-                                if (waitForReaderIsReadyProgressDialog.getProgress() == waitForReaderIsReadyProgressDialog
+                if (waitForReaderIsReadyProgressDialog != null) {
+                    waitForReaderIsReadyProgressDialog.show();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                while (waitForReaderIsReadyProgressDialog.getProgress() <= waitForReaderIsReadyProgressDialog
                                         .getMax()) {
-                                    waitForReaderIsReadyProgressDialog.dismiss();
+                                    Thread.sleep(500);
+                                    scanProgressBarHandle.sendMessage(scanProgressBarHandle.obtainMessage());
+                                    if (waitForReaderIsReadyProgressDialog.getProgress() == waitForReaderIsReadyProgressDialog
+                                            .getMax()) {
+                                        waitForReaderIsReadyProgressDialog.dismiss();
+                                    }
                                 }
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
                         }
-                    }
-                }).start();
-            }
+                    }).start();
+                } else {
+                    waitForReaderIsReadyProgressDialog = new ProgressDialog(getActivity());
 
+                    waitForReaderIsReadyProgressDialog.setMax(120);
+                    waitForReaderIsReadyProgressDialog.setTitle("Connecting reader");
+                    waitForReaderIsReadyProgressDialog.setMessage("Scanning (press button)...");
+                    waitForReaderIsReadyProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                    waitForReaderIsReadyProgressDialog.show();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                while (waitForReaderIsReadyProgressDialog.getProgress() <= waitForReaderIsReadyProgressDialog
+                                        .getMax()) {
+                                    Thread.sleep(500);
+                                    scanProgressBarHandle.sendMessage(scanProgressBarHandle.obtainMessage());
+                                    if (waitForReaderIsReadyProgressDialog.getProgress() == waitForReaderIsReadyProgressDialog
+                                            .getMax()) {
+                                        waitForReaderIsReadyProgressDialog.dismiss();
+                                    }
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                }
+            }
         };
 
+        //Do NOT store this in your app (secret key)
         public String getTestApiKey() {
             return "24425c33043244778a188bd19846e860";
         }
@@ -1305,18 +1179,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 startTransaction = true;
                 totalEMVTime = System.currentTimeMillis();
                 textAmount = (EditText) findViewById(R.id.textAmount);
-
-//                if (!isReady || !device.device_isConnected()) {
-//                    if (device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_BT)) {
-//                        info += "\nScan Start Time " + new Date().toString() + "\n";
-//                        handler.post(doUpdateStatus);
-//                        scanforDevice(true, BLE_ScanTimeout);
-//                    } else {
-//                        Toast.makeText(getActivity(), "Failed. Please disconnect first.", Toast.LENGTH_SHORT).show();
-//                    }
-//                } else {
                 handler.post(doSwipeProgressBar);
-                //}
             }
         }
 
@@ -1600,7 +1463,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 handler.post(doUpdateStatus);
 
             }
-//            Toast.makeText(getActivity(), "Reader Connected", Toast.LENGTH_LONG).show();
 
             if (applyClearentConfiguration) {
                 long waitBeforeAttemptingConfiguration = 100;
@@ -1632,8 +1494,6 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         public void timeout(int errorCode) {
-//            if (alertSwipe != null && alertSwipe.isShowing())
-//                alertSwipe.dismiss();
             info += ErrorCodeInfo.getErrorCodeDescription(errorCode);
             detail = "";
             handler.post(doUpdateStatus);
