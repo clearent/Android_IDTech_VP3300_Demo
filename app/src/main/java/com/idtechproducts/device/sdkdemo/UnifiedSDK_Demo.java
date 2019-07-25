@@ -175,6 +175,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         private ViewGroup viewGroup;
         private AlertDialog transactionAlertDialog;
 
+        private String lastTransactionToken;
         private String info = "";
         private String detail = "";
         private Handler handler = new Handler();
@@ -291,18 +292,19 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         @Override
         public void isReady() {
             applyClearentConfiguration = false;
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    swipeButton.setEnabled(true);
-                    commandBtn.setEnabled(true);
-                }
-            });
+//            getActivity().runOnUiThread(new Runnable() {
+//                public void run() {
+//                    swipeButton.setEnabled(true);
+//                    commandBtn.setEnabled(true);
+//                }
+//            });
             info += "\nClearent Framework communicated back (isReady) at Time " + new Date().toString() + "\n";
             info += "\nCard reader is ready for use.\n";
             handler.post(doUpdateStatus);
 
             if (waitForReaderIsReadyProgressDialog != null && waitForReaderIsReadyProgressDialog.isShowing()) {
                 waitForReaderIsReadyProgressDialog.dismiss();
+                handler.post(doEnableButtons);
                 handler.post(doTransactionAlert);
                 handler.post(doStartTransaction);
             }
@@ -312,19 +314,34 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         @Override
         public void successfulTransactionToken(final TransactionToken transactionToken) {
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    info += "Please remove card\n";
-                    transactionAlertDialog.setMessage("Please remove card");
-                    info += "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
-                    handler.post(doUpdateStatus);
-                    manualButton.setEnabled(true);
-                    swipeButton.setEnabled(true);
-                    commandBtn.setEnabled(true);
-                }
-            });
+            lastTransactionToken = transactionToken.getTransactionToken();
+//            getActivity().runOnUiThread(new Runnable() {
+//                public void run() {
+//                    info += "Please remove card\n";
+//                    transactionAlertDialog.setMessage("Please remove card");
+//                    info += "Card is now represented by a transaction token: " + transactionToken.getTransactionToken() + "\n";
+//                    handler.post(doUpdateStatus);
+//                    manualButton.setEnabled(true);
+//                    swipeButton.setEnabled(true);
+//                    commandBtn.setEnabled(true);
+//                }
+//            });
+            handler.post(doSuccessUpdates);
             runSampleTransaction(transactionToken);
         }
+
+        private Runnable doSuccessUpdates = new Runnable() {
+            public void run() {
+                info += "Please remove card\n";
+                transactionAlertDialog.setMessage("Please remove card");
+                info += "Card is now represented by a transaction token: " + lastTransactionToken + "\n";
+                handler.post(doUpdateStatus);
+                manualButton.setEnabled(true);
+                swipeButton.setEnabled(true);
+                commandBtn.setEnabled(true);
+            }
+        };
+
 
         @Override
         public void handleCardProcessingResponse(CardProcessingResponse cardProcessingResponse) {
@@ -562,9 +579,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
                     if (device.device_getDeviceType() == DEVICE_TYPE.DEVICE_VP3300_USB) {
                         handler.post(doEnableButtons);
-                        device.registerListen();
+                        handler.post(doRegisterListen);
                     } else if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
-                        device.registerListen();
+                        handler.post(doRegisterListen);
                         device.device_configurePeripheralAndConnect();
                     }
                 }
@@ -634,8 +651,13 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         private void scanforDevice(final boolean enable, final long timeout) {
             handler.post(doConnectReaderProgressBar);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             if (currentBluetoothDevice != null) {
-                device.registerListen();
+                handler.post(doRegisterListen);
             } else {
                 btleDeviceRegistered = false;
                 bleRetryCount = 0;
@@ -731,7 +753,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     if (storedDeviceSerialNumberOfConfiguredReader.contains(last5)) {
                         Log.i("WATCH", "The device we found during scanning has been configured from this device");
                     }
-                    device.registerListen();
+                    handler.post(doRegisterListen);
                     btleDeviceRegistered = true;
                 } else {
                     Log.i("SCAN", "Skip " + result.getDevice().getName());
@@ -1048,6 +1070,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
             }
         };
 
+        private Runnable doRegisterListen = new Runnable() {
+            public void run() {
+                device.registerListen();
+            }
+        };
+
         private Runnable doStartTransaction = new Runnable() {
             @Override
             public void run() {
@@ -1116,7 +1144,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                             try {
                                 while (waitForReaderIsReadyProgressDialog.getProgress() <= waitForReaderIsReadyProgressDialog
                                         .getMax()) {
-                                    Thread.sleep(500);
+                                    Thread.sleep(100);
                                     scanProgressBarHandle.sendMessage(scanProgressBarHandle.obtainMessage());
                                     if (waitForReaderIsReadyProgressDialog.getProgress() == waitForReaderIsReadyProgressDialog
                                             .getMax()) {
@@ -1142,7 +1170,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                             try {
                                 while (waitForReaderIsReadyProgressDialog.getProgress() <= waitForReaderIsReadyProgressDialog
                                         .getMax()) {
-                                    Thread.sleep(500);
+                                    Thread.sleep(100);
                                     scanProgressBarHandle.sendMessage(scanProgressBarHandle.obtainMessage());
                                     if (waitForReaderIsReadyProgressDialog.getProgress() == waitForReaderIsReadyProgressDialog
                                             .getMax()) {
@@ -1165,7 +1193,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
 
         @Override
         public String getPaymentsBaseUrl() {
-            return "https://gateway-sb.clearent.net";
+            return "https://gateway-qa.clearent.net";
         }
 
         @Override
