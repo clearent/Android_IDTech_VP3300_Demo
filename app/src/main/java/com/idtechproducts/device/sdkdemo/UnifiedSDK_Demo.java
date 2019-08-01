@@ -331,13 +331,21 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         public void handleCardProcessingResponse(CardProcessingResponse cardProcessingResponse) {
             switch (cardProcessingResponse) {
                 case TERMINATE:
-                case USE_MAGSTRIPE:
                     getActivity().runOnUiThread(new Runnable() {
                         public void run() {
                             swipeButton.setEnabled(true);
                             commandBtn.setEnabled(true);
                             if (transactionAlertDialog != null && transactionAlertDialog.isShowing()) {
                                 transactionAlertDialog.hide();
+                            }
+                        }
+                    });
+                    break;
+                case USE_MAGSTRIPE:
+                    getActivity().runOnUiThread(new Runnable() {
+                        public void run() {
+                            if (transactionAlertDialog != null && transactionAlertDialog.isShowing()) {
+                                transactionAlertDialog.setMessage("Failed to read chip. Try swipe.");
                             }
                         }
                     });
@@ -1102,8 +1110,9 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     } else {
                         displayTransactionPopup();
                     }
-                 //   currentBluetoothDevice = null;
-                    scanforDevice(true, BLE_ScanTimeout);
+                    if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
+                        scanforDevice(true, BLE_ScanTimeout);
+                    }
                 }
             }
         };
