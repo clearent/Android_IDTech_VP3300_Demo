@@ -679,6 +679,10 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
         }
 
         private void scanforDevice(final boolean enable, final long timeout) {
+            if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
+                return;
+            }
+
             isReady = false;
             try {
                 Thread.sleep(500);
@@ -1110,7 +1114,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     } else {
                         displayTransactionPopup();
                     }
-                    if (device.device_getDeviceType() != DEVICE_TYPE.DEVICE_VP3300_BT) {
+                    if (device.device_getDeviceType() == DEVICE_TYPE.DEVICE_VP3300_BT) {
                         scanforDevice(true, BLE_ScanTimeout);
                     }
                 }
@@ -1131,6 +1135,12 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                 //int ret = device.emv_startTransaction(1.00, 0.00, 0, emvTimeout, tags, false);
                 if (ret == ErrorCode.SUCCESS || ret == ErrorCode.RETURN_CODE_OK_NEXT_COMMAND) {
                     transactionAlertDialog.setMessage("Insert card or try swipe...");
+                } else if (device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_AJ)) {
+                    transactionAlertDialog.setMessage("Failed to start transaction. Check for low battery amber light or reconnect reader");
+                    info = "Card reader is not connected\n";
+                    info += "Status: " + device.device_getResponseCodeString(ret) + "";
+                    handler.post(doEnableButtons);
+                    handler.post(doUpdateStatus);
                 } else if (!device.device_isConnected() && device.device_setDeviceType(DEVICE_TYPE.DEVICE_VP3300_BT)) {
                     transactionAlertDialog.setMessage("Card reader is not connecting. Check for low battery amber light or press button to try again");
                     info = "Card reader is not connected. Press button,\n";
@@ -1140,7 +1150,7 @@ public class UnifiedSDK_Demo extends ActionBarActivity {
                     btleDeviceRegistered = false;
                     scanforDevice(true, BLE_ScanTimeout);
                 } else {
-                    transactionAlertDialog.setMessage("Card reader failed to process. Cancel and try again");
+                    transactionAlertDialog.setMessage("Failed to start transaction. Cancel and try again");
                     info = "cannot swipe/tap card\n";
                     info += "Status: " + device.device_getResponseCodeString(ret) + "";
                     handler.post(doEnableButtons);
